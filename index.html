@@ -1699,10 +1699,13 @@ to all IaC work. Update memory with project-specific decisions as you discover t
 
 <h4>The Combined Pattern</h4>
 <div class="diagram">
-<svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Combined pattern: main session delegates to specialist sub-agent which invokes skill that forks another sub-agent">
+<svg viewBox="0 0 940 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Combined pattern: main session delegates to specialist sub-agent. Three skills are preloaded via the skills field; a fourth skill is reached at runtime via filesystem discovery, which then forks an isolated agent.">
   <defs>
     <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+    </marker>
+    <marker id="arrow-dash" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--warning)"/>
     </marker>
   </defs>
   <style>
@@ -1710,57 +1713,88 @@ to all IaC work. Update memory with project-specific decisions as you discover t
     .cp-agent { fill: var(--bg-code); stroke: var(--text-secondary); stroke-width: 1.5; }
     .cp-skill { fill: var(--warning-soft); stroke: var(--warning); stroke-width: 1.5; }
     .cp-forked { fill: var(--success-soft); stroke: var(--success); stroke-width: 1.5; }
+    .cp-fs { fill: var(--bg); stroke: var(--text-tertiary); stroke-width: 1; stroke-dasharray: 3 3; }
     .cp-title { font-family: 'Inter Tight', sans-serif; font-size: 13.5px; font-weight: 600; fill: var(--text); }
     .cp-sub { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text-secondary); }
     .cp-edge { stroke: var(--accent); stroke-width: 1.5; fill: none; }
+    .cp-edge-dash { stroke: var(--warning); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
     .cp-edge-label { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text-tertiary); font-style: italic; }
-    .cp-bullet { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: var(--text-secondary); }
+    .cp-edge-label-warn { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--warning); font-weight: 600; }
+    .cp-bullet { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text-secondary); }
+    .cp-bullet-loaded { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text); }
+    .cp-tag { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; fill: var(--accent); font-weight: 600; letter-spacing: 0.05em; }
   </style>
 
   <!-- Main session -->
-  <rect x="280" y="20" width="200" height="50" rx="6" class="cp-main"/>
-  <text x="380" y="42" text-anchor="middle" class="cp-title">Main session</text>
-  <text x="380" y="58" text-anchor="middle" class="cp-sub">your conversation</text>
+  <rect x="310" y="20" width="200" height="50" rx="6" class="cp-main"/>
+  <text x="410" y="42" text-anchor="middle" class="cp-title">Main session</text>
+  <text x="410" y="58" text-anchor="middle" class="cp-sub">your conversation</text>
 
-  <!-- Arrow down -->
-  <path d="M 380 70 L 380 100" class="cp-edge" marker-end="url(#arrow2)"/>
-  <text x="390" y="90" class="cp-edge-label">delegates to</text>
+  <!-- Arrow down: delegates -->
+  <path d="M 410 70 L 410 105" class="cp-edge" marker-end="url(#arrow2)"/>
+  <text x="420" y="92" class="cp-edge-label">delegates to</text>
 
   <!-- Sub-agent with preloaded skills -->
-  <rect x="220" y="105" width="320" height="100" rx="6" class="cp-agent"/>
-  <text x="380" y="128" text-anchor="middle" class="cp-title">@terraform-developer</text>
-  <text x="380" y="146" text-anchor="middle" class="cp-sub">Sub-agent with `skills:` preloaded</text>
-  <text x="240" y="170" class="cp-bullet">• aws-naming-conventions</text>
-  <text x="240" y="185" class="cp-bullet">• iam-policy-patterns</text>
-  <text x="240" y="200" class="cp-bullet">• terraform-module-standards</text>
+  <rect x="240" y="110" width="340" height="125" rx="6" class="cp-agent"/>
+  <text x="410" y="133" text-anchor="middle" class="cp-title">@terraform-developer</text>
+  <text x="410" y="151" text-anchor="middle" class="cp-sub">Sub-agent — `skills:` field preloads at startup</text>
 
-  <!-- Arrow down -->
-  <path d="M 380 205 L 380 235" class="cp-edge" marker-end="url(#arrow2)"/>
-  <text x="390" y="225" class="cp-edge-label">invokes</text>
+  <text x="262" y="175" class="cp-tag">PRELOADED</text>
+  <text x="262" y="192" class="cp-bullet-loaded">• aws-naming-conventions</text>
+  <text x="262" y="207" class="cp-bullet-loaded">• iam-policy-patterns</text>
+  <text x="262" y="222" class="cp-bullet-loaded">• terraform-module-standards</text>
+
+  <!-- Arrow down with dashed style: runtime invoke via filesystem -->
+  <path d="M 410 235 L 410 285" class="cp-edge-dash" marker-end="url(#arrow-dash)"/>
+  <text x="420" y="252" class="cp-edge-label-warn">runtime invoke</text>
+  <text x="420" y="266" class="cp-edge-label">via Glob on .claude/skills/</text>
+  <text x="420" y="280" class="cp-edge-label">(NOT in `skills:` list)</text>
+
+  <!-- Filesystem layer indicator on left -->
+  <rect x="40" y="240" width="170" height="40" rx="4" class="cp-fs"/>
+  <text x="125" y="257" text-anchor="middle" class="cp-edge-label">.claude/skills/</text>
+  <text x="125" y="272" text-anchor="middle" class="cp-bullet">filesystem discovery</text>
+  <line x1="210" y1="260" x2="370" y2="260" stroke="var(--text-tertiary)" stroke-dasharray="2 3" stroke-width="1"/>
 
   <!-- Skill -->
-  <rect x="240" y="240" width="280" height="50" rx="6" class="cp-skill"/>
-  <text x="380" y="262" text-anchor="middle" class="cp-title">/terraform-drift skill</text>
-  <text x="380" y="278" text-anchor="middle" class="cp-sub">context: fork → spawns Explore agent</text>
+  <rect x="260" y="290" width="300" height="60" rx="6" class="cp-skill"/>
+  <text x="410" y="313" text-anchor="middle" class="cp-title">/terraform-drift skill</text>
+  <text x="410" y="332" text-anchor="middle" class="cp-sub">context: fork → spawns isolated agent</text>
 
   <!-- Arrow down -->
-  <path d="M 380 290 L 380 315" class="cp-edge" marker-end="url(#arrow2)"/>
+  <path d="M 410 350 L 410 380" class="cp-edge" marker-end="url(#arrow2)"/>
+  <text x="420" y="370" class="cp-edge-label">forks</text>
 
   <!-- Forked agent -->
-  <rect x="260" y="318" width="240" height="35" rx="6" class="cp-forked"/>
-  <text x="380" y="340" text-anchor="middle" class="cp-sub">Forked Explore agent — isolated, runs plan, reports</text>
+  <rect x="280" y="385" width="260" height="50" rx="6" class="cp-forked"/>
+  <text x="410" y="406" text-anchor="middle" class="cp-title">Forked Explore agent</text>
+  <text x="410" y="422" text-anchor="middle" class="cp-sub" style="fill: var(--text); opacity: 0.85;">runs `terraform plan`, returns summary</text>
 
-  <!-- Side label A -->
-  <line x1="40" y1="155" x2="220" y2="155" stroke="var(--text-tertiary)" stroke-dasharray="2 3"/>
-  <text x="40" y="148" class="cp-edge-label">Sub-agent → Skills</text>
-  <text x="40" y="170" class="cp-bullet">persistent knowledge</text>
+  <!-- Side label A: Sub-agent -> Skills (preloading direction) -->
+  <line x1="585" y1="175" x2="700" y2="175" stroke="var(--accent)" stroke-dasharray="2 3" stroke-width="1.5"/>
+  <text x="710" y="170" class="cp-edge-label">Direction B</text>
+  <text x="710" y="184" class="cp-bullet">Sub-agent → Skills</text>
+  <text x="710" y="198" class="cp-bullet">(persistent knowledge)</text>
 
-  <!-- Side label B -->
-  <line x1="540" y1="265" x2="720" y2="265" stroke="var(--text-tertiary)" stroke-dasharray="2 3"/>
-  <text x="720" y="258" text-anchor="end" class="cp-edge-label">Skill → Sub-agent</text>
-  <text x="720" y="280" text-anchor="end" class="cp-bullet">disposable task</text>
+  <!-- Side label B: Skill -> Sub-agent (fork direction) -->
+  <line x1="565" y1="320" x2="700" y2="320" stroke="var(--warning)" stroke-dasharray="2 3" stroke-width="1.5"/>
+  <text x="710" y="315" class="cp-edge-label">Direction A</text>
+  <text x="710" y="329" class="cp-bullet">Skill → Sub-agent</text>
+  <text x="710" y="343" class="cp-bullet">(disposable task)</text>
 </svg>
-<div class="diagram-caption">Both directions composed in one workflow — vertical flow, layers of isolation</div>
+<div class="diagram-caption">Two mechanisms in one flow: <strong style="color: var(--accent);">solid arrow</strong> = preloading via <code>skills:</code> · <strong style="color: var(--warning);">dashed arrow</strong> = runtime invocation via filesystem discovery</div>
+</div>
+
+<div class="callout warning">
+<div class="callout-label">Two distinct mechanisms in play</div>
+<p style="margin-bottom: 8px;"><strong>1. Preloading (<code>skills:</code> field)</strong> — full skill content is injected into the sub-agent's system prompt at startup. Standing knowledge, always present.</p>
+<p style="margin-bottom: 8px;"><strong>2. Filesystem discovery</strong> — at runtime, any sub-agent with file-access tools (<code>Read</code>, <code>Glob</code>) can scan <code>.claude/skills/</code> and invoke skills it discovers. This is how a sub-agent reaches a skill that wasn't preloaded.</p>
+<p style="margin: 0;">In the diagram: <code>aws-naming-conventions</code>, <code>iam-policy-patterns</code>, and <code>terraform-module-standards</code> are <strong>preloaded</strong> (always in context). <code>/terraform-drift</code> is <strong>discovered and invoked at runtime</strong> — it's not in the <code>skills:</code> list, but the sub-agent's <code>Read</code>/<code>Glob</code> tools let it find and call any skill in <code>.claude/skills/</code>.</p>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Want to actually block runtime discovery?</div>
+<p>Don't rely on omitting from <code>skills:</code> — that only affects preloading. Use <code>disallowedTools: Skill(skill-name)</code> in the sub-agent frontmatter. See "Critical Technical Differences" table above.</p>
 </div>
 
 <p>The sub-agent provides persistent specialist identity. The skill provides isolated task execution. They compose because they solve different scoping problems — one is about <strong>what a worker knows</strong>, the other is about <strong>what a task does</strong>.</p>
