@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Team Deep Dive Guide</title>
+<meta name="description" content="End-of-day team knowledge session on Claude Code: memory, sub-agents, skills, execution modes, and critical boundaries.">
+
+<!-- Open Graph (for sharing) -->
+<meta property="og:title" content="Claude Code — Team Deep Dive Guide">
+<meta property="og:description" content="Memory & Context, Sub-agents, Skills, Execution Modes, and Critical Boundaries.">
+<meta property="og:type" content="article">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+
+<style>
+/* ============================================================
+   Design tokens
+   ============================================================ */
+:root[data-theme="dark"] {
+  --bg: #0d0e10;
+  --bg-elevated: #16181c;
+  --bg-code: #0a0b0d;
+  --bg-table-header: #1c1f24;
+  --bg-table-stripe: #131518;
+  --border: #2a2d33;
+  --border-soft: #1f2126;
+  --text: #e4e6eb;
+  --text-secondary: #a0a4ab;
+  --text-tertiary: #6c7079;
+  --accent: #d4a574;        /* warm sand */
+  --accent-soft: #d4a57422;
+  --accent-strong: #e8b888;
+  --link: #88b4d8;
+  --link-hover: #a8cdec;
+  --critical: #e87b6b;
+  --critical-soft: #e87b6b15;
+  --success: #7bb87b;
+  --success-soft: #7bb87b15;
+  --warning: #d4b76a;
+  --warning-soft: #d4b76a15;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+:root[data-theme="light"] {
+  --bg: #fbf9f6;
+  --bg-elevated: #ffffff;
+  --bg-code: #f3f1ec;
+  --bg-table-header: #f0ede6;
+  --bg-table-stripe: #f6f4ef;
+  --border: #d9d4c8;
+  --border-soft: #e8e4db;
+  --text: #1a1a1a;
+  --text-secondary: #545454;
+  --text-tertiary: #828282;
+  --accent: #a8753f;
+  --accent-soft: #a8753f12;
+  --accent-strong: #8a5d2c;
+  --link: #2e5c84;
+  --link-hover: #1e3f5e;
+  --critical: #b8453a;
+  --critical-soft: #b8453a10;
+  --success: #3f7a3f;
+  --success-soft: #3f7a3f10;
+  --warning: #8a6f1e;
+  --warning-soft: #8a6f1e10;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ============================================================
+   Layout shell
+   ============================================================ */
+.app {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* Sidebar */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  padding: 32px 24px;
+  font-size: 13.5px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.sidebar-brand-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0d0e10;
+}
+
+.sidebar-sub {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  font-weight: 500;
+}
+
+.sidebar-search {
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.sidebar-search input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px 8px 32px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sidebar-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
+}
+.sidebar-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+.sidebar-search-shortcut {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 2px 5px;
+  pointer-events: none;
+}
+
+.sidebar-nav {
+  list-style: none;
+}
+
+.sidebar-nav > li {
+  margin-bottom: 4px;
+}
+
+.sidebar-nav a {
+  display: block;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  transition: color 0.12s, background 0.12s;
+  line-height: 1.4;
+  border-left: 2px solid transparent;
+}
+
+.sidebar-nav a:hover {
+  color: var(--text);
+  background: var(--bg-elevated);
+}
+
+.sidebar-nav a.section {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13.5px;
+  letter-spacing: -0.005em;
+  margin-top: 12px;
+}
+
+.sidebar-nav a.cluster {
+  padding-left: 24px;
+  font-size: 13px;
+}
+
+.sidebar-nav a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+
+.sidebar-footer {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-footer button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+.sidebar-footer button:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Main content */
+.content {
+  padding: 56px 64px 120px;
+  max-width: 880px;
+  min-width: 0;
+}
+
+/* ============================================================
+   Typography
+   ============================================================ */
+.hero {
+  margin-bottom: 56px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 52px;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin-bottom: 16px;
+  font-feature-settings: 'ss01';
+}
+
+.hero h1 em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.hero-meta {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 20px;
+}
+
+.hero-meta a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--border);
+  transition: color 0.15s, border-color 0.15s;
+}
+.hero-meta a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 80px 0 24px;
+  padding-top: 16px;
+  position: relative;
+}
+
+h2.section-heading {
+  border-top: 1px solid var(--border);
+  padding-top: 56px;
+  margin-top: 80px;
+}
+
+h2.section-heading::before {
+  content: attr(data-section);
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 48px 0 16px;
+}
+
+h3.cluster-heading {
+  font-size: 28px;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px dashed var(--border-soft);
+}
+
+h3.cluster-heading::before {
+  content: attr(data-cluster);
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+h4 {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+
+h5 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 24px 0 10px;
+}
+
+/* Heading anchor links */
+.heading-anchor {
+  margin-left: 10px;
+  opacity: 0;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55em;
+  font-weight: 400;
+  transition: opacity 0.15s, color 0.15s;
+  cursor: pointer;
+  user-select: none;
+  vertical-align: middle;
+}
+h2:hover .heading-anchor, h3:hover .heading-anchor, h4:hover .heading-anchor {
+  opacity: 1;
+}
+.heading-anchor:hover { color: var(--accent); }
+.heading-anchor.copied { color: var(--success); opacity: 1; }
+
+p { margin: 14px 0; color: var(--text); }
+p + p { margin-top: 16px; }
+
+a { color: var(--link); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s, color 0.15s; }
+a:hover { color: var(--link-hover); border-bottom-color: currentColor; }
+
+strong { font-weight: 600; color: var(--text); }
+em { color: var(--text); font-style: italic; }
+
+/* Inline code */
+:not(pre) > code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: var(--bg-code);
+  border: 1px solid var(--border-soft);
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  color: var(--accent-strong);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Lists
+   ============================================================ */
+ul, ol { margin: 14px 0 14px 4px; padding-left: 24px; }
+li { margin: 6px 0; line-height: 1.65; }
+li::marker { color: var(--text-tertiary); }
+
+ul li::marker { content: '— '; font-family: 'JetBrains Mono', monospace; }
+
+/* ============================================================
+   Code blocks
+   ============================================================ */
+.code-wrapper {
+  position: relative;
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+}
+
+.code-header .lang {
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.copy-btn.copied {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+pre {
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12.5px !important;
+  line-height: 1.65 !important;
+  overflow-x: auto;
+  background: var(--bg-code) !important;
+  border-radius: 0 !important;
+}
+
+pre code {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12.5px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  color: var(--text) !important;
+  white-space: pre;
+}
+
+/* ============================================================
+   Tables
+   ============================================================ */
+.table-wrapper {
+  margin: 20px 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+th {
+  background: var(--bg-table-header);
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+
+tbody tr:nth-child(even) {
+  background: var(--bg-table-stripe);
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:hover {
+  background: var(--accent-soft);
+}
+
+td code, th code {
+  font-size: 12px;
+}
+
+/* ============================================================
+   Callouts
+   ============================================================ */
+.callout {
+  margin: 24px 0;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border-left: 3px solid;
+  font-size: 14px;
+}
+
+.callout.note { background: var(--accent-soft); border-color: var(--accent); }
+.callout.critical { background: var(--critical-soft); border-color: var(--critical); }
+.callout.success { background: var(--success-soft); border-color: var(--success); }
+.callout.warning { background: var(--warning-soft); border-color: var(--warning); }
+
+.callout-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.callout.note .callout-label { color: var(--accent); }
+.callout.critical .callout-label { color: var(--critical); }
+.callout.success .callout-label { color: var(--success); }
+.callout.warning .callout-label { color: var(--warning); }
+
+.callout p:first-child { margin-top: 0; }
+.callout p:last-child { margin-bottom: 0; }
+
+/* ============================================================
+   Blockquote
+   ============================================================ */
+blockquote {
+  margin: 20px 0;
+  padding: 8px 0 8px 20px;
+  border-left: 2px solid var(--accent);
+  color: var(--text-secondary);
+  font-style: italic;
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   Diagrams (SVG)
+   ============================================================ */
+.diagram {
+  margin: 28px 0;
+  padding: 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.diagram svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+.diagram-caption {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 14px;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   Misc
+   ============================================================ */
+hr {
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 40px 0;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* Toast for copy feedback */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  z-index: 100;
+  font-family: 'JetBrains Mono', monospace;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* Search filter — hide non-matching */
+.sidebar-nav li.hidden { display: none; }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 1100px) {
+  .app { grid-template-columns: 240px 1fr; }
+  .content { padding: 48px 40px 80px; }
+  .hero h1 { font-size: 42px; }
+}
+
+@media (max-width: 800px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 20px;
+  }
+  .sidebar-nav { max-height: 60vh; overflow-y: auto; }
+  .content { padding: 32px 24px 64px; }
+  .hero h1 { font-size: 36px; }
+  h2 { font-size: 28px; }
+  h3 { font-size: 22px; }
+  h3.cluster-heading { font-size: 24px; }
+}
+
+/* ============================================================
+   Print
+   ============================================================ */
+@media print {
+  .sidebar, .copy-btn, .heading-anchor, .toast, .sidebar-footer { display: none !important; }
+  .app { grid-template-columns: 1fr; max-width: none; }
+  .content { padding: 0; max-width: none; }
+  body { background: white; color: black; font-size: 11pt; }
+  .code-wrapper, .table-wrapper, .diagram { page-break-inside: avoid; }
+  h2 { page-break-before: auto; page-break-after: avoid; }
+  h3, h4 { page-break-after: avoid; }
+  a { color: black; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <span class="sidebar-brand-mark">CC</span>
+    Team Deep Dive
+  </div>
+  <div class="sidebar-sub">v 2026.05</div>
+
+  <div class="sidebar-search">
+    <svg class="sidebar-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Filter sections…" autocomplete="off">
+    <span class="sidebar-search-shortcut">⌘K</span>
+  </div>
+
+  <ul class="sidebar-nav" id="sidebarNav">
+    <li><a href="#section-1" class="section">Section 1 — Landscape</a></li>
+    <li><a href="#section-2" class="section">Section 2 — Deep Dives</a></li>
+    <li><a href="#cluster-1" class="cluster">Memory &amp; Context</a></li>
+    <li><a href="#cluster-2" class="cluster">Sub-agents</a></li>
+    <li><a href="#cluster-3" class="cluster">Skills</a></li>
+    <li><a href="#cluster-4" class="cluster">Execution Modes</a></li>
+    <li><a href="#section-3" class="section">Section 3 — Boundaries</a></li>
+    <li><a href="#two-directions" class="cluster">The Two Directions</a></li>
+    <li><a href="#commands-matrix" class="cluster">Commands · Skills · Sub-agents</a></li>
+    <li><a href="#section-4" class="section">Section 4 — Best Practices</a></li>
+    <li><a href="#section-5" class="section">Section 5 — Deprecations</a></li>
+    <li><a href="#references" class="section">Reference Links</a></li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <button id="themeToggle" title="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span>Toggle theme</span>
+    </button>
+    <button id="shareBtn" title="Copy page link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <span>Share link</span>
+    </button>
+    <button id="printBtn" title="Print or save as PDF">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <span>Print / PDF</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ============================================================
+     CONTENT
+     ============================================================ -->
+<main class="content">
+
+<header class="hero">
+  <div class="hero-eyebrow">End-of-day team session</div>
+  <h1>Claude Code — <em>Team Deep Dive</em> Guide</h1>
+  <div class="hero-meta">
+    <span>Source: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">code.claude.com/docs</a></span>
+    <span>May 2026</span>
+  </div>
+</header>
+
+<!-- Content sections will be inserted here -->
+<!-- ============================================================
+     SECTION 1
+     ============================================================ -->
+<h2 id="section-1" class="section-heading" data-section="Section 1">Feature Landscape Map</h2>
+
+<h3>Product Definition</h3>
+<p>Claude Code is an <strong>agentic coding tool</strong> — not a chat assistant. It reads your codebase, edits files, runs commands, and orchestrates multi-step work across your entire project. It operates on your local machine with your tools, your filesystem, and your credentials.</p>
+
+<h3>Surface Layer — Where It Runs</h3>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Surface</th><th>Entry Point</th><th>Key Capabilities</th><th>Requires</th></tr></thead>
+<tbody>
+<tr><td><strong>Terminal CLI</strong></td><td><code>claude</code></td><td>Full feature set, pipe/stdin, scripting</td><td>Subscription or API key</td></tr>
+<tr><td><strong>VS Code extension</strong></td><td>Marketplace</td><td>Inline diffs, @-mentions, plan review</td><td>CLI installed</td></tr>
+<tr><td><strong>JetBrains plugin</strong></td><td>Marketplace</td><td>Interactive diffs, selection context</td><td>CLI installed</td></tr>
+<tr><td><strong>Desktop App</strong></td><td>claude.ai download</td><td>Visual diff review, multi-session, scheduling, Dispatch</td><td>Paid subscription</td></tr>
+<tr><td><strong>Web (claude.ai/code)</strong></td><td>Browser</td><td>No local setup, long-running cloud tasks, iOS app</td><td>Paid subscription</td></tr>
+<tr><td><strong>Remote Control</strong></td><td>CLI <code>/</code> menu or mobile</td><td>Continue local session from phone/browser</td><td>Active local session</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Critical distinction</div>
+<p>All surfaces share the same underlying engine — CLAUDE.md, settings, MCP servers, and skills work across all of them.</p>
+</div>
+
+<h3>Capability Layer — What It Can Do</h3>
+
+<div class="diagram">
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Capability layer diagram">
+  <defs>
+    <linearGradient id="layerGrad1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .layer-bg { fill: var(--bg-code); stroke: var(--border); stroke-width: 1; }
+    .layer-bg-accent { fill: url(#layerGrad1); stroke: var(--accent); stroke-width: 1; stroke-opacity: 0.4; }
+    .layer-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; fill: var(--accent); text-transform: uppercase; }
+    .layer-item { font-family: 'JetBrains Mono', monospace; font-size: 13px; fill: var(--text); }
+    .layer-divider { fill: var(--text-tertiary); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  </style>
+  <!-- Layer 1: Execution Modes -->
+  <rect x="20" y="20" width="680" height="70" rx="6" class="layer-bg-accent"/>
+  <text x="36" y="42" class="layer-label">Execution Modes</text>
+  <text x="36" y="72" class="layer-item">Interactive CLI</text>
+  <text x="180" y="72" class="layer-divider">│</text>
+  <text x="200" y="72" class="layer-item">Headless (-p)</text>
+  <text x="340" y="72" class="layer-divider">│</text>
+  <text x="360" y="72" class="layer-item">Sub-agents</text>
+  <text x="475" y="72" class="layer-divider">│</text>
+  <text x="495" y="72" class="layer-item">Routines</text>
+
+  <!-- Layer 2: Context & Memory -->
+  <rect x="20" y="100" width="680" height="70" rx="6" class="layer-bg"/>
+  <text x="36" y="122" class="layer-label">Context &amp; Memory</text>
+  <text x="36" y="152" class="layer-item">CLAUDE.md</text>
+  <text x="148" y="152" class="layer-divider">│</text>
+  <text x="168" y="152" class="layer-item">.claude/rules/</text>
+  <text x="305" y="152" class="layer-divider">│</text>
+  <text x="325" y="152" class="layer-item">Auto Memory</text>
+  <text x="460" y="152" class="layer-divider">│</text>
+  <text x="480" y="152" class="layer-item">/compact</text>
+
+  <!-- Layer 3: Extensibility -->
+  <rect x="20" y="180" width="680" height="70" rx="6" class="layer-bg"/>
+  <text x="36" y="202" class="layer-label">Extensibility</text>
+  <text x="36" y="232" class="layer-item">Skills</text>
+  <text x="105" y="232" class="layer-divider">│</text>
+  <text x="125" y="232" class="layer-item">Hooks</text>
+  <text x="195" y="232" class="layer-divider">│</text>
+  <text x="215" y="232" class="layer-item">MCP</text>
+  <text x="265" y="232" class="layer-divider">│</text>
+  <text x="285" y="232" class="layer-item">Plugins</text>
+  <text x="370" y="232" class="layer-divider">│</text>
+  <text x="390" y="232" class="layer-item">Agent SDK</text>
+
+  <!-- Layer 4: Integrations -->
+  <rect x="20" y="260" width="680" height="70" rx="6" class="layer-bg"/>
+  <text x="36" y="282" class="layer-label">Integrations</text>
+  <text x="36" y="312" class="layer-item">GitHub Actions</text>
+  <text x="180" y="312" class="layer-divider">│</text>
+  <text x="200" y="312" class="layer-item">GitLab CI/CD</text>
+  <text x="330" y="312" class="layer-divider">│</text>
+  <text x="350" y="312" class="layer-item">Slack</text>
+  <text x="415" y="312" class="layer-divider">│</text>
+  <text x="435" y="312" class="layer-item">Channels</text>
+</svg>
+<div class="diagram-caption">Four capability layers, stacked top-to-bottom</div>
+</div>
+
+<!-- ============================================================
+     SECTION 2
+     ============================================================ -->
+<h2 id="section-2" class="section-heading" data-section="Section 2">Feature Deep Dives</h2>
+
+<!-- CLUSTER 1 -->
+<h3 id="cluster-1" class="cluster-heading" data-cluster="Cluster 1">Memory &amp; Context</h3>
+<p><strong>Source:</strong> <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">code.claude.com/docs/en/memory</a></p>
+
+<h4>The Core Problem</h4>
+<p>Every Claude Code session starts with a <strong>fresh context window</strong>. Nothing persists by default. Memory is the mechanism to bridge sessions.</p>
+
+<h4>Two Complementary Systems</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th></th><th>CLAUDE.md files</th><th>Auto Memory</th></tr></thead>
+<tbody>
+<tr><td><strong>Who writes it</strong></td><td>You (human)</td><td>Claude (automatic)</td></tr>
+<tr><td><strong>What it contains</strong></td><td>Instructions, rules, standards</td><td>Learnings, build commands, preferences Claude discovers</td></tr>
+<tr><td><strong>Scope</strong></td><td>Project / User / Org / Local</td><td>Per repository, shared across worktrees</td></tr>
+<tr><td><strong>Loaded into context</strong></td><td>Every session, full content</td><td>Every session, first 200 lines or 25KB of MEMORY.md</td></tr>
+<tr><td><strong>Use for</strong></td><td>Coding standards, workflows, architecture decisions</td><td>Build commands, debugging insights, patterns Claude discovers</td></tr>
+<tr><td><strong>Location</strong></td><td>Various (see scopes below)</td><td><code>~/.claude/projects/&lt;project&gt;/memory/</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Key rule</div>
+<p>CLAUDE.md = what <em>you</em> want Claude to always know. Auto memory = what <em>Claude</em> learns from watching you work.</p>
+</div>
+
+<h4>CLAUDE.md — Scope Hierarchy</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">paths</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">/Library/Application Support/ClaudeCode/CLAUDE.md   ← Managed (org-wide, cannot be excluded)
+~/.claude/CLAUDE.md                                  ← User (all your projects)
+./CLAUDE.md or ./.claude/CLAUDE.md                  ← Project (team-shared via git)
+./CLAUDE.local.md                                    ← Local personal (gitignored)</code></pre>
+</div>
+
+<p><strong>Load order:</strong> Managed → User → Project → Local. More specific = higher priority. All discovered files are <strong>concatenated</strong>, not overridden.</p>
+<p><strong>Subdirectory CLAUDE.md files</strong> load lazily — only when Claude reads files in that subdirectory. They are NOT re-injected after <code>/compact</code>.</p>
+
+<h4>.claude/rules/ — Modular Instructions</h4>
+<p>For larger projects, break CLAUDE.md into topic files:</p>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">tree</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">.claude/
+├── CLAUDE.md           ← main project instructions
+└── rules/
+    ├── code-style.md   ← always loaded
+    ├── testing.md      ← always loaded
+    └── api-design.md   ← always loaded (or path-scoped)</code></pre>
+</div>
+
+<p><strong>Path-scoped rules</strong> — only load when Claude works with matching files:</p>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">yaml</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-yaml">---
+paths:
+  - "src/api/**/*.ts"
+---
+# API Development Rules
+- All API endpoints must include input validation</code></pre>
+</div>
+
+<p><strong>Use path-scoped rules when:</strong> instructions apply to one layer of the stack (e.g., Terraform files, Lambda handlers, test files).</p>
+
+<h4>Auto Memory</h4>
+<ul>
+<li>Stored at: <code>~/.claude/projects/&lt;project&gt;/memory/MEMORY.md</code> + topic files</li>
+<li>First 200 lines / 25KB of <code>MEMORY.md</code> loaded at every session start</li>
+<li>Topic files (<code>debugging.md</code>, <code>patterns.md</code>) loaded <strong>on-demand</strong> by Claude</li>
+<li>Machine-local — does NOT sync to cloud environments</li>
+<li>Run <code>/memory</code> to browse, edit, or delete</li>
+<li>Disable: <code>CLAUDE_CODE_DISABLE_AUTO_MEMORY=1</code> or <code>"autoMemoryEnabled": false</code></li>
+</ul>
+<p><strong>Subagents can maintain their own auto memory</strong> — see subagent config docs.</p>
+
+<h4>Context Management: /compact</h4>
+<p>When the context window fills up:</p>
+<ul>
+<li><code>/compact</code> replaces conversation history with a summary</li>
+<li><strong>Project-root CLAUDE.md survives compaction</strong> (re-read from disk and re-injected)</li>
+<li><strong>Nested CLAUDE.md files in subdirectories are NOT re-injected</strong> after compaction</li>
+<li><strong>Skills</strong> are re-attached within a combined 25K token budget (most recently invoked first)</li>
+<li><strong>Auto memory</strong> survives compaction</li>
+</ul>
+
+<div class="callout critical">
+<div class="callout-label">Production gotcha</div>
+<p>Don't rely on in-conversation instructions for long tasks — always write them to CLAUDE.md before starting. Anything only said in chat will be lost after compaction.</p>
+</div>
+
+<h4>CLAUDE.md Best Practices</h4>
+<ul>
+<li><strong>Target under 200 lines</strong> per file. Longer = less adherence + more context cost.</li>
+<li>Write <strong>verifiable, specific</strong> instructions: <code>"Run npm test before committing"</code> not <code>"Test your changes"</code></li>
+<li>Use markdown headers and bullets — Claude scans structure like humans do</li>
+<li>If content is procedural (multi-step), move it to a <strong>Skill</strong> instead</li>
+<li>If content is path-specific, use <strong>path-scoped rules</strong> instead</li>
+<li>Use HTML block comments <code>&lt;!-- notes --&gt;</code> for maintainer notes — stripped from context</li>
+</ul>
+
+<div class="callout note">
+<div class="callout-label">The test</div>
+<p>If an entry in CLAUDE.md reads like a procedure, it belongs in a Skill. If it reads like a fact, it belongs in CLAUDE.md.</p>
+</div>
+
+<h4>CLAUDE.md vs AGENTS.md</h4>
+<p>If your repo already uses <code>AGENTS.md</code> for other coding agents:</p>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">&lt;!-- CLAUDE.md --&gt;
+@AGENTS.md
+
+## Claude Code-specific
+Use plan mode for changes under `src/billing/`.</code></pre>
+</div>
+<p>Or symlink: <code>ln -s AGENTS.md CLAUDE.md</code></p>
+
+<!-- CLUSTER 2: SUB-AGENTS -->
+<h3 id="cluster-2" class="cluster-heading" data-cluster="Cluster 2">Sub-agents</h3>
+<p><strong>Source:</strong> <a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener">code.claude.com/docs/en/sub-agents</a></p>
+
+<h4>What a Sub-agent Is</h4>
+<p>A sub-agent is a <strong>separate Claude instance with its own context window, tool allow-list, and system prompt</strong>. The main session delegates a task to it, the sub-agent works in isolation, and only the summarized result returns to the parent. Your main conversation stays clean.</p>
+
+<p><strong>Two ways to invoke:</strong></p>
+<ul>
+<li><strong>Auto-delegated</strong> — Claude reads the sub-agent's <code>description</code> and decides to use it</li>
+<li><strong>Manual</strong> — <code>@agent-name</code> from the user</li>
+</ul>
+
+<p><strong>Two ways to define:</strong></p>
+<ul>
+<li><strong>Built-in types</strong> — <code>Explore</code> (read-only research), <code>Plan</code> (planning), <code>general-purpose</code> (anything)</li>
+<li><strong>Custom</strong> — markdown files in <code>.claude/agents/</code> (project) or <code>~/.claude/agents/</code> (personal)</li>
+</ul>
+
+<h4>Anatomy of a Custom Sub-agent</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">path</span><button class="copy-btn">Copy</button></div>
+<pre><code>.claude/agents/code-reviewer.md</code></pre>
+</div>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">---
+name: code-reviewer
+description: Reviews code for quality and best practices. Use proactively after code changes.
+tools: Read, Grep, Glob, Bash(git diff *)
+model: sonnet
+permissionMode: plan
+maxTurns: 20
+skills:
+  - api-conventions
+  - error-handling-patterns
+memory: project
+---
+
+You are a senior code reviewer. When invoked:
+1. Run `git diff` to see recent changes
+2. Focus on modified files
+3. Review for readability, error handling, security, test coverage
+
+Organize feedback by priority: Critical → Warnings → Suggestions.</code></pre>
+</div>
+
+<h5>Key frontmatter fields</h5>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>description</code></td><td>Drives auto-delegation. Include "use proactively" / "use when X" trigger phrases.</td></tr>
+<tr><td><code>tools</code></td><td>Comma-separated allow-list. Omit to inherit all. Supports <code>Agent(agent_type)</code> syntax.</td></tr>
+<tr><td><code>disallowedTools</code></td><td>Subtractive deny-list. Use <code>Skill(skill-name)</code> to block specific skills.</td></tr>
+<tr><td><code>model</code></td><td><code>haiku</code>, <code>sonnet</code>, <code>opus</code>, or <code>inherit</code> (default).</td></tr>
+<tr><td><code>permissionMode</code></td><td><code>default</code>, <code>acceptEdits</code>, <code>plan</code>, <code>bypassPermissions</code>.</td></tr>
+<tr><td><code>maxTurns</code></td><td>Hard cap on agentic turns.</td></tr>
+<tr><td><code>skills</code></td><td>Skill names to <strong>preload</strong> into the sub-agent's startup context (see Section 3).</td></tr>
+<tr><td><code>memory</code></td><td><code>user</code>, <code>project</code>, or <code>local</code> — persistent memory scope for this sub-agent.</td></tr>
+<tr><td><code>background</code></td><td><code>true</code> runs as a background task.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Isolation Rules</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Property</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><strong>Conversation history</strong></td><td>Sub-agent does NOT inherit parent history. Fresh context.</td></tr>
+<tr><td><strong>CLAUDE.md</strong></td><td>Loaded fresh (managed + user + project), like any session.</td></tr>
+<tr><td><strong>Auto memory</strong></td><td>Sub-agent has its own scope per <code>memory:</code> field.</td></tr>
+<tr><td><strong>Skills (descriptions)</strong></td><td>NOT auto-injected into sub-agent system prompt — must use <code>skills:</code> field for preloading.</td></tr>
+<tr><td><strong>Skills (filesystem)</strong></td><td>Sub-agents with file access can still discover skills in <code>.claude/skills/</code> via <code>Glob</code> and invoke them. Blocking requires <code>disallowedTools: Skill(name)</code>.</td></tr>
+<tr><td><strong>Tools</strong></td><td>Restricted by <code>tools</code> / <code>disallowedTools</code>.</td></tr>
+<tr><td><strong>Result</strong></td><td>Summary returned to parent — full sub-agent context discarded.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout warning">
+<div class="callout-label">Practical implication</div>
+<p>The <code>skills:</code> field controls <strong>startup injection</strong> (full skill content in system prompt), not <strong>access</strong> (filesystem discovery). If you need a sub-agent locked down, combine <code>tools:</code> allow-list with <code>disallowedTools: Skill(...)</code>.</p>
+</div>
+
+<h4>Parallelism</h4>
+<ul>
+<li>Sub-agents can be <strong>chained</strong> (one after another) or <strong>run in parallel</strong> from the parent</li>
+<li>The parent issues multiple <code>Agent</code> tool calls; each runs in its own process</li>
+<li><strong>Hard constraint:</strong> sub-agents <strong>cannot spawn other sub-agents</strong>. Plan chains accordingly — your delegation tree is one level deep.</li>
+<li>Each sub-agent's messages include a <code>parent_tool_use_id</code> for observability across parallel runs</li>
+</ul>
+
+<h4>Lifecycle</h4>
+<div class="diagram">
+<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sub-agent lifecycle">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+    </marker>
+    <marker id="arrow-soft" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--text-tertiary)"/>
+    </marker>
+  </defs>
+  <style>
+    .lc-box { fill: var(--bg-code); stroke: var(--border); stroke-width: 1.5; }
+    .lc-box-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+    .lc-title { font-family: 'Inter Tight', sans-serif; font-size: 13px; font-weight: 600; fill: var(--text); }
+    .lc-sub { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text-secondary); }
+    .lc-arrow { stroke: var(--accent); stroke-width: 1.5; fill: none; }
+    .lc-arrow-soft { stroke: var(--text-tertiary); stroke-width: 1.5; fill: none; stroke-dasharray: 4 4; }
+    .lc-label { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text-tertiary); font-style: italic; }
+  </style>
+
+  <!-- Parent session -->
+  <rect x="20" y="20" width="180" height="60" rx="6" class="lc-box"/>
+  <text x="110" y="44" text-anchor="middle" class="lc-title">Parent session</text>
+  <text x="110" y="62" text-anchor="middle" class="lc-sub">main context</text>
+
+  <!-- Arrow down with label -->
+  <path d="M 110 80 L 110 110" class="lc-arrow" marker-end="url(#arrow)"/>
+  <text x="120" y="100" class="lc-label">spawn</text>
+
+  <!-- Sub-agent: spawn -->
+  <rect x="20" y="115" width="280" height="80" rx="6" class="lc-box-accent"/>
+  <text x="160" y="138" text-anchor="middle" class="lc-title">Sub-agent (fresh context)</text>
+  <text x="160" y="158" text-anchor="middle" class="lc-sub">loads CLAUDE.md</text>
+  <text x="160" y="174" text-anchor="middle" class="lc-sub">preloads `skills:` field content</text>
+  <text x="160" y="190" text-anchor="middle" class="lc-sub">applies `tools:` allow-list</text>
+
+  <!-- Down arrow -->
+  <path d="M 160 195 L 160 220" class="lc-arrow" marker-end="url(#arrow)"/>
+
+  <!-- Sub-agent: run -->
+  <rect x="20" y="225" width="280" height="60" rx="6" class="lc-box-accent"/>
+  <text x="160" y="249" text-anchor="middle" class="lc-title">Runs task</text>
+  <text x="160" y="269" text-anchor="middle" class="lc-sub">until completion or `maxTurns`</text>
+
+  <!-- Right column: parent -->
+  <rect x="380" y="115" width="320" height="170" rx="6" class="lc-box"/>
+  <text x="540" y="140" text-anchor="middle" class="lc-title">Parent (waits)</text>
+  <text x="540" y="180" text-anchor="middle" class="lc-sub">— context preserved —</text>
+  <text x="540" y="200" text-anchor="middle" class="lc-sub">— no sub-agent noise —</text>
+  <text x="540" y="220" text-anchor="middle" class="lc-sub">— sub-agent invisible —</text>
+
+  <!-- Return arrow -->
+  <path d="M 300 255 Q 340 255 380 200" class="lc-arrow-soft" marker-end="url(#arrow-soft)"/>
+  <text x="360" y="245" class="lc-label">summary only</text>
+
+  <!-- Final box -->
+  <rect x="380" y="20" width="320" height="60" rx="6" class="lc-box"/>
+  <text x="540" y="44" text-anchor="middle" class="lc-title">Parent continues</text>
+  <text x="540" y="62" text-anchor="middle" class="lc-sub">summary appended → context</text>
+
+  <!-- Up arrow -->
+  <path d="M 540 115 L 540 85" class="lc-arrow" marker-end="url(#arrow)"/>
+</svg>
+<div class="diagram-caption">Sub-agent lifecycle: spawn → run → return summary → discard context</div>
+</div>
+
+<h4>When to Use Sub-agents</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Use case</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Heavy research / code archaeology</td><td>Keep noise out of main context; use <code>Explore</code> agent</td></tr>
+<tr><td>Parallel work</td><td>Spawn N sub-agents simultaneously — N independent contexts</td></tr>
+<tr><td>Specialized domain work</td><td>Custom agent with preloaded <code>skills:</code> for that domain</td></tr>
+<tr><td>Risk isolation</td><td>Restricted <code>tools:</code> and <code>permissionMode: plan</code></td></tr>
+<tr><td>Long file-reading tasks</td><td>Parent stays clean; only summary returns</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Anti-patterns:</strong> Don't use a sub-agent for a task that needs ongoing conversation with the user (no history inheritance). Don't use one when you need the parent to see intermediate reasoning (only the summary returns).</p>
+
+<h4>Sub-agent Troubleshooting</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Problem</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Sub-agent not auto-triggered</td><td>Description missing trigger phrases</td><td>Add "use proactively" / "use when X" to <code>description</code></td></tr>
+<tr><td>Sub-agent has no domain knowledge</td><td>Skills not preloaded</td><td>Add <code>skills:</code> field; verify spelling matches <code>.claude/skills/&lt;name&gt;/</code></td></tr>
+<tr><td>Sub-agent invokes unwanted skills</td><td>Filesystem discovery</td><td>Add <code>disallowedTools: Skill(name)</code></td></tr>
+<tr><td>Result too vague</td><td><code>maxTurns</code> too low</td><td>Raise <code>maxTurns</code>; sub-agents need turns for tool calls + summary</td></tr>
+<tr><td>Need to nest sub-agents</td><td>Not supported</td><td>Refactor: parent calls sub-agent A, then sub-agent B sequentially</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- CLUSTER 3: SKILLS -->
+<h3 id="cluster-3" class="cluster-heading" data-cluster="Cluster 3">Skills</h3>
+<p><strong>Source:</strong> <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a></p>
+
+<h4>What Skills Are</h4>
+<p>Skills are <strong>reusable, named workflows</strong> defined as Markdown files. They solve the problem of repeating the same multi-step instructions in chat, and the problem of CLAUDE.md growing into a procedure manual.</p>
+
+<p><strong>The key distinction from CLAUDE.md:</strong></p>
+<ul>
+<li>CLAUDE.md content → <strong>always in context</strong>, every token costs every session</li>
+<li>Skill content → <strong>only loads when invoked</strong> (or when description matches the prompt)</li>
+</ul>
+
+<p><strong>The key distinction from Hooks:</strong></p>
+<ul>
+<li>Hooks → <strong>deterministic shell triggers</strong> at lifecycle events (runs regardless of Claude's decisions)</li>
+<li>Skills → <strong>Claude-orchestrated workflows</strong> (Claude decides when to run them, unless you restrict)</li>
+</ul>
+
+<h4>Anatomy of a Skill</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">tree</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">~/.claude/skills/my-skill/        ← personal scope
+├── SKILL.md                      ← required: instructions + frontmatter
+├── reference.md                  ← optional: detailed docs, loaded on demand
+├── examples/
+│   └── sample.md
+└── scripts/
+    └── helper.py                 ← scripts Claude can execute</code></pre>
+</div>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">---
+name: my-skill
+description: What this skill does and when to use it. Put the KEY USE CASE first.
+disable-model-invocation: true    ← only you can invoke (not Claude auto)
+context: fork                     ← run in isolated subagent context
+agent: Explore                    ← which subagent type
+allowed-tools: Bash(git add *) Bash(git commit *)
+effort: high
+paths:
+  - "src/**/*.ts"                 ← only activate for TypeScript files
+---
+
+Your instructions here...</code></pre>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Note</div>
+<p>Custom commands (<code>.claude/commands/deploy.md</code>) have been <strong>merged into skills</strong>. Both paths work. Skills add: supporting files directory, frontmatter control, subagent execution. Skills take precedence if names conflict.</p>
+</div>
+
+<h4>Skill Scopes</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Scope</th><th>Path</th><th>Visibility</th></tr></thead>
+<tbody>
+<tr><td>Enterprise (managed)</td><td><code>/Library/.../ClaudeCode/skills/</code></td><td>All org users — overrides all</td></tr>
+<tr><td>Personal</td><td><code>~/.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>All your projects</td></tr>
+<tr><td>Project</td><td><code>.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>This project, team-shared via git</td></tr>
+<tr><td>Plugin</td><td><code>&lt;plugin&gt;/skills/&lt;name&gt;/SKILL.md</code></td><td>Where plugin is enabled, namespaced</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Precedence:</strong> Enterprise &gt; Personal &gt; Project. Plugin skills use <code>plugin-name:skill-name</code> namespace — no conflicts.</p>
+
+<h4>Invocation Control</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Frontmatter</th><th>You can invoke</th><th>Claude can invoke</th><th>Description in context</th></tr></thead>
+<tbody>
+<tr><td>(default)</td><td>✅</td><td>✅</td><td>Always included</td></tr>
+<tr><td><code>disable-model-invocation: true</code></td><td>✅</td><td>❌</td><td>NOT in context</td></tr>
+<tr><td><code>user-invocable: false</code></td><td>❌</td><td>✅</td><td>Always included</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Rule of thumb:</strong></p>
+<ul>
+<li>Side-effect skills (<code>/deploy</code>, <code>/commit</code>, <code>/send-slack-message</code>) → always <code>disable-model-invocation: true</code>. You don't want Claude deciding to deploy because your code "looks ready."</li>
+<li>Background knowledge skills (<code>legacy-system-context</code>) → <code>user-invocable: false</code>. Claude should load it when relevant; it's not a user command.</li>
+</ul>
+
+<h4>Dynamic Context Injection</h4>
+<p>Skills can execute shell commands <strong>before</strong> Claude sees the content:</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">---
+name: summarize-changes
+description: Summarizes uncommitted changes and flags anything risky.
+---
+
+## Current changes
+!`git diff HEAD`
+
+## Instructions
+Summarize the above in 2-3 bullets. Flag missing error handling, hardcoded values, or tests that need updating.</code></pre>
+</div>
+
+<p>The <code>!`git diff HEAD`</code> line runs at skill load time. Claude receives the rendered output, not the command. This is <strong>preprocessing</strong>, not something Claude executes.</p>
+
+<p><strong>Multi-line form:</strong></p>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">## Environment
+```!
+node --version
+npm --version
+git status --short
+```</code></pre>
+</div>
+
+<p><strong>To disable shell execution for security:</strong> set <code>"disableSkillShellExecution": true</code> in managed settings. Replaces all <code>!</code> blocks with <code>[shell command execution disabled by policy]</code>.</p>
+
+<h4>Running Skills in a Subagent (<code>context: fork</code>)</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">---
+name: pr-summary
+description: Summarize changes in a pull request
+context: fork
+agent: Explore
+allowed-tools: Bash(gh *)
+---
+
+## Pull request context
+- PR diff: !`gh pr diff`
+- PR comments: !`gh pr view --comments`
+
+## Your task
+Summarize this pull request...</code></pre>
+</div>
+
+<p>When <code>context: fork</code>:</p>
+<ul>
+<li>Skill content becomes the subagent prompt</li>
+<li>Subagent runs in isolation — no access to your conversation history</li>
+<li><code>agent</code> field picks the execution environment (<code>Explore</code>, <code>Plan</code>, <code>general-purpose</code>, or any custom subagent in <code>.claude/agents/</code>)</li>
+<li>Results are summarized and returned to your main session</li>
+</ul>
+
+<p><strong>Use <code>context: fork</code> when:</strong> the skill is a bounded research or analysis task that should not touch your main conversation state.</p>
+
+<h4>Skill Content Lifecycle &amp; Token Costs</h4>
+<ul>
+<li>Once invoked, skill content <strong>enters the conversation as a message and stays for the session</strong></li>
+<li>Claude does NOT re-read the skill file on later turns</li>
+<li>After <code>/compact</code>: the top 5,000 tokens of each recently-invoked skill are re-attached</li>
+<li>Combined re-attach budget: <strong>25,000 tokens</strong> across all skills</li>
+<li>Older skills get dropped first if budget is exceeded</li>
+</ul>
+
+<div class="callout warning">
+<div class="callout-label">Production implication</div>
+<p>Keep SKILL.md under 500 lines. Move detailed reference docs to supporting files. A skill that's too large will silently lose its tail after compaction.</p>
+</div>
+
+<h4>Pre-approving Tools in a Skill</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">---
+name: commit
+description: Stage and commit the current changes
+disable-model-invocation: true
+allowed-tools: Bash(git add *) Bash(git commit *) Bash(git status *)
+---</code></pre>
+</div>
+
+<div class="callout critical">
+<div class="callout-label">Security note</div>
+<p><code>allowed-tools</code> in a project skill takes effect after you accept the <strong>workspace trust dialog</strong> for that folder. Review project skills before trusting a repository — a skill can grant itself broad tool access.</p>
+</div>
+
+<h4>Bundled Skills (Built-in)</h4>
+<p>These ship with Claude Code and are available in every session:</p>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Skill</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>/debug</code></td><td>Debug issues in your codebase</td></tr>
+<tr><td><code>/simplify</code></td><td>Simplify complex code</td></tr>
+<tr><td><code>/batch</code></td><td>Run multiple operations</td></tr>
+<tr><td><code>/loop</code></td><td>Repeat a prompt in a session</td></tr>
+<tr><td><code>/claude-api</code></td><td>Claude API interaction patterns</td></tr>
+<tr><td><code>/review</code></td><td>Code review (also invocable by Claude)</td></tr>
+<tr><td><code>/security-review</code></td><td>Security-focused code review</td></tr>
+<tr><td><code>/init</code></td><td>Generate CLAUDE.md from codebase analysis</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Bundled skills are prompt-based</strong> — they give Claude instructions and let it orchestrate work. Unlike built-in commands (<code>/compact</code>, <code>/help</code>), which execute fixed logic.</p>
+
+<h4>Skill Troubleshooting</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Problem</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Skill not triggering</td><td>Description missing key terms</td><td>Add natural trigger phrases to <code>description</code></td></tr>
+<tr><td>Skill triggers too often</td><td>Description too broad</td><td>Narrow description or add <code>disable-model-invocation: true</code></td></tr>
+<tr><td>Description cut short</td><td>Too many skills, budget overflow</td><td>Run <code>/doctor</code>, trim descriptions, use <code>skillOverrides: "name-only"</code> for low-priority skills</td></tr>
+<tr><td>Skill stops working after <code>/compact</code></td><td>Content dropped from re-attach budget</td><td>Re-invoke skill, or reduce total skill count</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- CLUSTER 4: EXECUTION MODES -->
+<h3 id="cluster-4" class="cluster-heading" data-cluster="Cluster 4">Execution Modes</h3>
+<p><strong>Source:</strong> <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener">code.claude.com/docs/en/headless</a></p>
+
+<h4>The Four Execution Modes</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Mode</th><th>Invocation</th><th>Use Case</th><th>Human in loop?</th></tr></thead>
+<tbody>
+<tr><td><strong>Interactive CLI</strong></td><td><code>claude</code></td><td>Daily development, exploratory tasks</td><td>Yes</td></tr>
+<tr><td><strong>Headless / <code>-p</code> mode</strong></td><td><code>claude -p "..."</code></td><td>CI/CD, scripts, automation</td><td>No</td></tr>
+<tr><td><strong>Sub-agents</strong></td><td>From within session, or <code>claude agents</code></td><td>Parallel subtasks, delegation</td><td>Optional</td></tr>
+<tr><td><strong>Routines</strong></td><td><code>/schedule</code> or Desktop app</td><td>Recurring scheduled work on Anthropic infra</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Interactive Mode</h4>
+<p>The default. Full feature set: hooks, skills, MCP, auto memory, permission prompts, diff review.</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">cd your-project
+claude</code></pre>
+</div>
+
+<h5>Permission Modes (interactive and headless)</h5>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Mode</th><th>What it does</th><th>Risk</th></tr></thead>
+<tbody>
+<tr><td><code>default</code></td><td>Prompts for each sensitive action</td><td>Low</td></tr>
+<tr><td><code>acceptEdits</code></td><td>Auto-approves file writes + common FS commands (<code>mkdir</code>, <code>mv</code>, etc.)</td><td>Medium</td></tr>
+<tr><td><code>plan</code></td><td>Read-only; outputs a plan for review</td><td>None</td></tr>
+<tr><td><code>auto</code></td><td>Classifier decides; prompts only for ambiguous actions</td><td>Medium</td></tr>
+<tr><td><code>bypassPermissions</code></td><td>No prompts, no restrictions</td><td><strong>HIGH</strong> — dev sandbox only</td></tr>
+<tr><td><code>dontAsk</code></td><td>Denies anything not in allow-list</td><td>High strictness</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout critical">
+<div class="callout-label">Production rule</div>
+<p><code>bypassPermissions</code> must never run against production infrastructure or real credentials. It is a local sandbox mode.</p>
+</div>
+
+<h4>Headless Mode (<code>-p</code>)</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash"># Basic
+claude -p "What does the auth module do?"
+
+# Pipe stdin
+cat build-error.txt | claude -p 'explain root cause' &gt; output.txt
+
+# Structured JSON output
+claude -p "Summarize this project" --output-format json
+
+# Tool restriction
+claude -p "Run the test suite and fix any failures" \
+  --allowedTools "Bash,Read,Edit"
+
+# Session continuity
+session_id=$(claude -p "Start a review" --output-format json | jq -r '.session_id')
+claude -p "Continue that review" --resume "$session_id"</code></pre>
+</div>
+
+<p><strong>Output formats:</strong> <code>text</code> (default) | <code>json</code> | <code>stream-json</code></p>
+
+<h4>Bare Mode (<code>--bare</code>) — Critical for CI</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">claude --bare -p "Summarize this file" --allowedTools "Read"</code></pre>
+</div>
+
+<p><code>--bare</code> skips <strong>everything</strong> auto-discovered: hooks, skills, plugins, MCP servers, auto memory, CLAUDE.md. Result is deterministic regardless of local developer config.</p>
+
+<div class="callout critical">
+<div class="callout-label">Use --bare for all CI/CD pipelines</div>
+<p>Without it, a teammate's local <code>~/.claude</code> hook or MCP server could silently affect your pipeline run.</p>
+</div>
+
+<p><strong>Note:</strong> <code>--bare</code> will become the <strong>default</strong> for <code>-p</code> in a future release. Start using it now.</p>
+<p><strong>In bare mode, authentication must be <code>ANTHROPIC_API_KEY</code> or <code>apiKeyHelper</code> — no OAuth.</strong></p>
+<p><strong>stdin cap:</strong> As of v2.1.128, piped stdin is capped at <strong>10MB</strong>. For larger inputs, write to a file and reference the path in the prompt.</p>
+
+<h4>CI/CD Integration Pattern</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">yaml</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-yaml"># GitHub Actions example
+- name: Claude Code review
+  run: |
+    gh pr diff "$PR_NUMBER" | claude --bare -p \
+      --append-system-prompt "You are a security engineer. Review for vulnerabilities." \
+      --output-format json \
+      --allowedTools "Read"</code></pre>
+</div>
+
+<p><strong>Permission hygiene for CI:</strong></p>
+<ul>
+<li>Always use <code>--allowedTools</code> to explicitly scope tool access</li>
+<li>Prefer <code>--permission-mode dontAsk</code> for locked-down runs</li>
+<li>Use <code>--output-format json</code> to capture cost metadata (<code>total_cost_usd</code>)</li>
+<li>Never run with <code>bypassPermissions</code> in CI</li>
+</ul>
+
+<h4>Scheduling: <code>/loop</code> vs Desktop Tasks vs Routines</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th></th><th><code>/loop</code></th><th>Desktop Scheduled Tasks</th><th>Routines</th></tr></thead>
+<tbody>
+<tr><td><strong>Where it runs</strong></td><td>Inside active CLI session</td><td>Your local machine</td><td>Anthropic-managed cloud infra</td></tr>
+<tr><td><strong>Persists when machine off</strong></td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+<tr><td><strong>Trigger types</strong></td><td>Repeating prompt in session</td><td>Time-based</td><td>Time, API call, GitHub event</td></tr>
+<tr><td><strong>Local file access</strong></td><td>Yes</td><td>Yes</td><td>No (cloud environment)</td></tr>
+<tr><td><strong>Setup</strong></td><td>Inline in session</td><td>Desktop app</td><td><code>/schedule</code>, Web, or Desktop app</td></tr>
+<tr><td><strong>Best for</strong></td><td>Quick in-session polling</td><td>Local recurring tasks</td><td>PR reviews, CI analysis, doc syncing</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Agent SDK — Pointer Only</h4>
+<div class="callout note">
+<div class="callout-label">Out of scope</div>
+<p>The <strong>Agent SDK</strong> is a Python/TypeScript library that exposes the same agent loop, tools, and context management as the CLI, for programmatic use (custom CI agents, internal automation). Out of scope for this session — see the <a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener">Agent SDK docs</a> if you have a use case for it.</p>
+</div>
+
+<!-- ============================================================
+     SECTION 3
+     ============================================================ -->
+<h2 id="section-3" class="section-heading" data-section="Section 3">Critical Boundaries &amp; Discriminations</h2>
+
+<h3>CLAUDE.md vs Skills vs Hooks</h3>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Mechanism</th><th>Type</th><th>When loaded</th><th>Enforced?</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td><strong>CLAUDE.md</strong></td><td>Instruction/fact</td><td>Every session, always in context</td><td>No (Claude reads, may not follow)</td><td>Stable project facts, architecture decisions, naming conventions</td></tr>
+<tr><td><strong>Skills</strong></td><td>Workflow/procedure</td><td>On demand (invoked or description match)</td><td>No (Claude-orchestrated)</td><td>Repeatable multi-step tasks, team shared workflows</td></tr>
+<tr><td><strong>Hooks</strong></td><td>Shell trigger</td><td>At lifecycle events (deterministic)</td><td><strong>Yes</strong> (runs regardless of Claude)</td><td>Auto-format on save, lint before commit, audit logging</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">The test</div>
+<ul>
+<li>"Always use 2-space indentation" → <strong>CLAUDE.md</strong></li>
+<li>"Before committing, run these 5 steps" → <strong>Skill</strong> (with <code>disable-model-invocation: true</code>)</li>
+<li>"After every file edit, run prettier" → <strong>Hook</strong> (PostToolUse, deterministic)</li>
+</ul>
+</div>
+
+<h3>CLAUDE.md vs .claude/rules/</h3>
+<ul>
+<li><code>CLAUDE.md</code>: monolithic, applies everywhere, loaded at session start</li>
+<li><code>.claude/rules/</code>: modular, supports path-scoping, easier to maintain in teams</li>
+<li>Both loaded the same way — use <code>rules/</code> once CLAUDE.md grows beyond 150 lines or needs per-filetype scoping</li>
+</ul>
+
+<h3>Sub-agents vs Routines vs Headless <code>-p</code></h3>
+<div class="table-wrapper">
+<table>
+<thead><tr><th></th><th>Sub-agents</th><th>Routines</th><th>Headless <code>-p</code></th></tr></thead>
+<tbody>
+<tr><td><strong>Trigger</strong></td><td>Spawned from main session</td><td>Time-based / API / GitHub event</td><td>Script/CI/you</td></tr>
+<tr><td><strong>Infra</strong></td><td>Your process</td><td>Anthropic cloud</td><td>Your process</td></tr>
+<tr><td><strong>Runs when machine off</strong></td><td>No</td><td><strong>Yes</strong></td><td>No</td></tr>
+<tr><td><strong>Best for</strong></td><td>Parallel subtasks within a session</td><td>Recurring scheduled automation</td><td>Scripted one-off calls</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3><code>--bare</code> vs Default <code>-p</code></h3>
+<ul>
+<li>Default <code>-p</code>: loads all local config (CLAUDE.md, hooks, skills, MCP, auto memory) — non-deterministic in CI</li>
+<li><code>--bare</code>: loads <strong>nothing</strong> from disk — deterministic, reproducible</li>
+<li><strong>Always use <code>--bare</code> in CI/CD</strong></li>
+</ul>
+
+<!-- THE TWO DIRECTIONS -->
+<h3 id="two-directions">The Two Directions: Skills ↔ Sub-agents</h3>
+<p>Skills and sub-agents look similar but solve <strong>inverse</strong> problems. The same primitive — a skill's <code>context: fork</code> field, and a sub-agent's <code>skills:</code> field — can compose in either direction.</p>
+
+<blockquote>The Claude Code docs describe both: a skill can fork into a sub-agent, <em>and</em> a sub-agent can preload skills at startup. They use the same underlying mechanism but inject content into different sides of the boundary.</blockquote>
+
+<h4>Direction A — Skill → Sub-agent (<code>context: fork</code> in SKILL.md)</h4>
+<p>The <strong>skill IS the task</strong>. The sub-agent is just the execution environment.</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">yaml — .claude/skills/terraform-drift/SKILL.md</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-yaml">---
+name: terraform-drift
+description: Check for drift between state and actual infra
+context: fork
+agent: Explore                  # which built-in or custom subagent runs this
+allowed-tools: Bash(terraform *)
+disable-model-invocation: true  # you invoke it, not Claude auto
+---
+
+## Live state
+!`terraform plan -no-color 2>&1`
+
+## Your task
+Identify any drift between the plan output above and the expected state.
+Flag any resources being replaced, destroyed, or modified outside the
+module boundary. Return a structured summary only.</code></pre>
+</div>
+
+<ul>
+<li>The skill content becomes the prompt that drives the sub-agent</li>
+<li>The <code>!</code> injection runs before Claude sees anything — the sub-agent receives a fully-rendered prompt with live data already inlined</li>
+<li>The result is summarized and returned to your main session</li>
+<li>Your main conversation context stays clean</li>
+</ul>
+
+<p><strong>Use this when:</strong> the workflow is a bounded, triggered task — a scan, a summary, a review. You define the task once as a skill; the sub-agent is disposable.</p>
+
+<h4>Direction B — Sub-agent → Skills (<code>skills:</code> in agent frontmatter)</h4>
+<p>The <strong>skills are domain knowledge</strong>. The sub-agent is the persistent specialist.</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">yaml — .claude/agents/terraform-developer.md</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-yaml">---
+name: terraform-developer
+description: Writes and reviews Terraform following team standards. Use proactively for any IaC work.
+tools: Read, Edit, Write, Bash(terraform *), Bash(aws *)
+model: sonnet
+skills:
+  - aws-naming-conventions      # full content injected at startup
+  - terraform-module-standards  # full content injected at startup
+  - iam-policy-patterns         # full content injected at startup
+memory: project
+---
+
+You are a Terraform specialist. Apply the preloaded conventions and patterns
+to all IaC work. Update memory with project-specific decisions as you discover them.</code></pre>
+</div>
+
+<ul>
+<li>The <strong>full content</strong> of each listed skill is injected into the sub-agent's context at startup</li>
+<li>The sub-agent carries this knowledge for its entire lifetime</li>
+<li>Unlike a regular session where skill descriptions are loaded but full content only on invocation, here <strong>full content is in context from turn one</strong></li>
+</ul>
+
+<p><strong>Use this when:</strong> you have a reusable specialist that needs standing domain knowledge before it sees any task — conventions, standards, patterns, architectural decisions.</p>
+
+<h4>Use Case Comparison</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Situation</th><th>Which direction</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td><code>/security-scan</code> — SAST on current diff, report findings</td><td>Skill → Sub-agent</td><td>Bounded task, dynamic input via <code>!</code> injection, isolated result</td></tr>
+<tr><td><code>@terraform-developer</code> — implement new S3 module</td><td>Sub-agent → Skills</td><td>Specialist needs conventions preloaded before starting</td></tr>
+<tr><td><code>/pr-summary</code> — pull live <code>gh pr diff</code> and summarize</td><td>Skill → Sub-agent</td><td>Task IS the skill; sub-agent is the executor</td></tr>
+<tr><td><code>code-reviewer</code> always enforcing team's API standards</td><td>Sub-agent → Skills</td><td>Persistent specialist carrying standing knowledge</td></tr>
+<tr><td><code>/check-iam-drift</code> — one-off compliance check</td><td>Skill → Sub-agent</td><td>Triggered analysis, disposable sub-agent context</td></tr>
+<tr><td><code>k8s-operator</code> — ongoing Helm work with cluster conventions</td><td>Sub-agent → Skills</td><td>Needs cluster standards + Helm conventions loaded upfront</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Critical Technical Differences</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th></th><th>Skill → Sub-agent (<code>context: fork</code>)</th><th>Sub-agent → Skills (<code>skills:</code> field)</th></tr></thead>
+<tbody>
+<tr><td>Conversation history</td><td>❌ None — fresh context</td><td>❌ None — fresh context</td></tr>
+<tr><td>What goes into context</td><td>Skill content <strong>is</strong> the task prompt</td><td>Skills are <strong>standing knowledge</strong> injected before any task</td></tr>
+<tr><td>Who controls the system prompt</td><td>The agent type (<code>Explore</code>, <code>Plan</code>, custom)</td><td>Your sub-agent's markdown body</td></tr>
+<tr><td>Skill content lifecycle</td><td>IS the first message</td><td>Injected at startup, persists throughout</td></tr>
+<tr><td>Compatible with <code>disable-model-invocation: true</code>?</td><td>✅ Yes — orthogonal flags. The flag suppresses auto-invocation; <code>context: fork</code> controls where it runs.</td><td>✅ Yes — orthogonal flags. <code>skills:</code> is a startup-injection mechanism, independent of auto-invocation.</td></tr>
+<tr><td>What the field does NOT do</td><td>—</td><td><code>skills:</code> controls injection, <strong>not access</strong>. File-system-capable sub-agents can still discover other project skills via <code>Glob</code> on <code>.claude/skills/</code>. To block, use <code>disallowedTools: Skill(name)</code>.</td></tr>
+<tr><td>Reusability unit</td><td>The <strong>skill</strong></td><td>The <strong>sub-agent</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>The Combined Pattern</h4>
+<div class="diagram">
+<svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Combined pattern: main session delegates to specialist sub-agent which invokes skill that forks another sub-agent">
+  <defs>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+  <style>
+    .cp-main { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+    .cp-agent { fill: var(--bg-code); stroke: var(--text-secondary); stroke-width: 1.5; }
+    .cp-skill { fill: var(--warning-soft); stroke: var(--warning); stroke-width: 1.5; }
+    .cp-forked { fill: var(--success-soft); stroke: var(--success); stroke-width: 1.5; }
+    .cp-title { font-family: 'Inter Tight', sans-serif; font-size: 13.5px; font-weight: 600; fill: var(--text); }
+    .cp-sub { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text-secondary); }
+    .cp-edge { stroke: var(--accent); stroke-width: 1.5; fill: none; }
+    .cp-edge-label { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; fill: var(--text-tertiary); font-style: italic; }
+    .cp-bullet { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: var(--text-secondary); }
+  </style>
+
+  <!-- Main session -->
+  <rect x="280" y="20" width="200" height="50" rx="6" class="cp-main"/>
+  <text x="380" y="42" text-anchor="middle" class="cp-title">Main session</text>
+  <text x="380" y="58" text-anchor="middle" class="cp-sub">your conversation</text>
+
+  <!-- Arrow down -->
+  <path d="M 380 70 L 380 100" class="cp-edge" marker-end="url(#arrow2)"/>
+  <text x="390" y="90" class="cp-edge-label">delegates to</text>
+
+  <!-- Sub-agent with preloaded skills -->
+  <rect x="220" y="105" width="320" height="100" rx="6" class="cp-agent"/>
+  <text x="380" y="128" text-anchor="middle" class="cp-title">@terraform-developer</text>
+  <text x="380" y="146" text-anchor="middle" class="cp-sub">Sub-agent with `skills:` preloaded</text>
+  <text x="240" y="170" class="cp-bullet">• aws-naming-conventions</text>
+  <text x="240" y="185" class="cp-bullet">• iam-policy-patterns</text>
+  <text x="240" y="200" class="cp-bullet">• terraform-module-standards</text>
+
+  <!-- Arrow down -->
+  <path d="M 380 205 L 380 235" class="cp-edge" marker-end="url(#arrow2)"/>
+  <text x="390" y="225" class="cp-edge-label">invokes</text>
+
+  <!-- Skill -->
+  <rect x="240" y="240" width="280" height="50" rx="6" class="cp-skill"/>
+  <text x="380" y="262" text-anchor="middle" class="cp-title">/terraform-drift skill</text>
+  <text x="380" y="278" text-anchor="middle" class="cp-sub">context: fork → spawns Explore agent</text>
+
+  <!-- Arrow down -->
+  <path d="M 380 290 L 380 315" class="cp-edge" marker-end="url(#arrow2)"/>
+
+  <!-- Forked agent -->
+  <rect x="260" y="318" width="240" height="35" rx="6" class="cp-forked"/>
+  <text x="380" y="340" text-anchor="middle" class="cp-sub">Forked Explore agent — isolated, runs plan, reports</text>
+
+  <!-- Side label A -->
+  <line x1="40" y1="155" x2="220" y2="155" stroke="var(--text-tertiary)" stroke-dasharray="2 3"/>
+  <text x="40" y="148" class="cp-edge-label">Sub-agent → Skills</text>
+  <text x="40" y="170" class="cp-bullet">persistent knowledge</text>
+
+  <!-- Side label B -->
+  <line x1="540" y1="265" x2="720" y2="265" stroke="var(--text-tertiary)" stroke-dasharray="2 3"/>
+  <text x="720" y="258" text-anchor="end" class="cp-edge-label">Skill → Sub-agent</text>
+  <text x="720" y="280" text-anchor="end" class="cp-bullet">disposable task</text>
+</svg>
+<div class="diagram-caption">Both directions composed in one workflow — vertical flow, layers of isolation</div>
+</div>
+
+<p>The sub-agent provides persistent specialist identity. The skill provides isolated task execution. They compose because they solve different scoping problems — one is about <strong>what a worker knows</strong>, the other is about <strong>what a task does</strong>.</p>
+
+<div class="callout critical">
+<div class="callout-label">Hard constraint</div>
+<p>Sub-agents cannot spawn other sub-agents. So the forked sub-agent from a <code>context: fork</code> skill cannot itself spawn another. Keep this in mind when designing chains — the delegation tree is one level deep.</p>
+</div>
+
+<h3 id="commands-matrix">Commands vs Skills vs Sub-agents — Matrix</h3>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Feature</th><th>Custom Commands (<code>/name</code>)</th><th>Custom Skills (<code>skill-name</code>)</th><th>Sub-agents (<code>@agent-name</code>)</th></tr></thead>
+<tbody>
+<tr><td><strong>Primary Purpose</strong></td><td>Explicit shortcut utilities and workflow automation</td><td>Injecting modular expertise, style guides, or rules</td><td>Offloading heavy, noisy, or parallel side-tasks</td></tr>
+<tr><td><strong>Context Behavior</strong></td><td>Injects prompt into the <strong>current session</strong>; shares history</td><td>Appends content into the main window context (on invocation)</td><td>Isolates entirely in a fresh, independent context window</td></tr>
+<tr><td><strong>Trigger Mechanism</strong></td><td>Manual user typing (e.g., <code>/lint</code>)</td><td>Automatic intent detection by Claude, OR manual <code>/skill-name</code></td><td>Auto-delegated by Claude (via <code>description</code>) or manual <code>@agent-name</code></td></tr>
+<tr><td><strong>Tool Permissions</strong></td><td>Inherits session permissions</td><td>Inherits session permissions; can pre-approve via <code>allowed-tools</code></td><td>Configurable per agent (<code>tools:</code> allow-list, <code>disallowedTools</code>)</td></tr>
+<tr><td><strong>Token Efficiency</strong></td><td>Medium — adds to current session like any prompt</td><td>Medium — full content enters context on invocation</td><td><strong>Very high</strong> — main session only receives the summary</td></tr>
+<tr><td><strong>Model Control</strong></td><td>Uses session model</td><td>Per-skill via <code>model:</code> field (otherwise inherits)</td><td>Per-agent via <code>model:</code> field (<code>haiku</code>/<code>sonnet</code>/<code>opus</code>/<code>inherit</code>)</td></tr>
+<tr><td><strong>File Location</strong></td><td><code>.claude/commands/name.md</code> ¹</td><td><code>.claude/skills/name/SKILL.md</code></td><td><code>.claude/agents/name.md</code></td></tr>
+</tbody>
+</table>
+</div>
+<p style="font-size: 12.5px; color: var(--text-tertiary); font-style: italic;">¹ Commands and skills are now unified. <code>.claude/commands/</code> files still work but <code>.claude/skills/</code> is the recommended path. Skills take precedence on name conflict.</p>
+
+<div class="callout note">
+<div class="callout-label">Quick mental model</div>
+<ul>
+<li><strong>Slash commands</strong> = reusable prompts for single-shot tasks. Best for standardizing PRs, running tests, simple refactors.</li>
+<li><strong>Skills</strong> = on-demand knowledge and deterministic workflows with progressive disclosure (description loaded; full content only on invocation). Best for API docs, style guides, multi-step file manipulations.</li>
+<li><strong>Sub-agents</strong> = isolated workers with their own context window, for complex multi-step work that shouldn't pollute the main conversation. Best for TDD workflows, security audits, root cause analysis, parallel execution.</li>
+</ul>
+</div>
+
+<!-- ============================================================
+     SECTION 4
+     ============================================================ -->
+<h2 id="section-4" class="section-heading" data-section="Section 4">Best Practices Reference</h2>
+
+<h3>CLAUDE.md</h3>
+<ul>
+<li>Under 200 lines per file</li>
+<li>Verifiable, specific instructions only</li>
+<li>Use path-scoped rules for per-filetype standards</li>
+<li>Version-control project CLAUDE.md; gitignore CLAUDE.local.md</li>
+<li>Run <code>/init</code> with <code>CLAUDE_CODE_NEW_INIT=1</code> for interactive setup</li>
+</ul>
+
+<h3>Sub-agents</h3>
+<ul>
+<li>Always include trigger phrases in <code>description</code> for auto-delegation ("use proactively", "use when X")</li>
+<li>Restrict <code>tools:</code> to the minimum the sub-agent needs</li>
+<li>Use <code>permissionMode: plan</code> for any agent that shouldn't make changes (e.g., reviewers, explorers)</li>
+<li>Combine <code>tools:</code> allow-list with <code>disallowedTools: Skill(name)</code> to actually block specific skills</li>
+<li>Use <code>skills:</code> for standing domain knowledge a specialist needs from turn one</li>
+<li>Remember the one-level-deep constraint — design chains, not trees</li>
+</ul>
+
+<h3>Skills</h3>
+<ul>
+<li>Use <code>disable-model-invocation: true</code> for any skill with side effects</li>
+<li>Keep SKILL.md under 500 lines; move reference docs to supporting files</li>
+<li>Use <code>!</code> shell injection to pull live data into the prompt (git diff, env info)</li>
+<li>Use <code>context: fork</code> to isolate skills from main conversation state</li>
+<li>Review project skills before accepting workspace trust — they can grant broad tool access</li>
+<li>Set <code>"disableSkillShellExecution": true</code> in managed settings for org security</li>
+</ul>
+
+<h3>Execution Modes / Headless</h3>
+<ul>
+<li>Always <code>--bare</code> for CI/CD pipelines</li>
+<li>Always <code>--allowedTools</code> with explicit tool list for automated runs</li>
+<li>Use <code>--output-format json</code> to capture cost metadata</li>
+<li>Pipe stdin capped at 10MB — write large inputs to file</li>
+<li>Use <code>ANTHROPIC_API_KEY</code> (not OAuth) in all non-interactive contexts</li>
+</ul>
+
+<h3>Permission Hygiene</h3>
+<ul>
+<li><code>bypassPermissions</code> → local sandbox only, never prod</li>
+<li><code>acceptEdits</code> → CI where you want file writes without prompts but still want shell command control</li>
+<li><code>dontAsk</code> → locked-down CI where unknown tools should fail the run</li>
+<li>Always use <code>--allowedTools</code> with explicit pattern matching: <code>Bash(git diff *)</code> not <code>Bash</code></li>
+</ul>
+
+<!-- ============================================================
+     SECTION 5
+     ============================================================ -->
+<h2 id="section-5" class="section-heading" data-section="Section 5">Deprecations &amp; Status Flags</h2>
+
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Item</th><th>Status</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>ENABLE_PROMPT_CACHING_1H_BEDROCK</code> env var</td><td><strong>Deprecated</strong></td><td>Use <code>ENABLE_PROMPT_CACHING_1H</code> instead</td></tr>
+<tr><td>Claude Opus 3 (<code>claude-3-opus-20240229</code>)</td><td><strong>Retired</strong></td><td>Returns error on all API calls. Migrate to Claude Opus 4.5 (3x cheaper)</td></tr>
+<tr><td>Claude Haiku 3.5</td><td><strong>Deprecated</strong> (announced)</td><td>Migrate to Claude Haiku 4.5</td></tr>
+<tr><td>TypeScript SDK V2</td><td><strong>Deprecated</strong></td><td>See Migration Guide at <code>agent-sdk/migration-guide</code></td></tr>
+<tr><td><code>.claude/commands/</code></td><td><strong>Merged into skills</strong></td><td>Still works, but Skills are recommended. Skills take precedence on name conflict</td></tr>
+<tr><td><code>/ultraplan</code></td><td><strong>Research Preview</strong></td><td>Not GA. Requires Claude Code v2.1.91+. Cloud-based planning; may change</td></tr>
+<tr><td>Computer Use</td><td><strong>Preview</strong></td><td>Not production-ready. Available in docs at <code>code.claude.com/docs/en/computer-use</code></td></tr>
+<tr><td>Chrome Extension</td><td><strong>Beta</strong></td><td>Not GA. <code>code.claude.com/docs/en/chrome</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================================================
+     REFERENCE LINKS
+     ============================================================ -->
+<h2 id="references" class="section-heading" data-section="Reference">Reference Links</h2>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Topic</th><th>URL</th></tr></thead>
+<tbody>
+<tr><td>Claude Code overview</td><td><a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener">code.claude.com/docs/en/overview</a></td></tr>
+<tr><td>Memory &amp; CLAUDE.md</td><td><a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">code.claude.com/docs/en/memory</a></td></tr>
+<tr><td>Skills</td><td><a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a></td></tr>
+<tr><td>Sub-agents</td><td><a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener">code.claude.com/docs/en/sub-agents</a></td></tr>
+<tr><td>Headless / programmatic</td><td><a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener">code.claude.com/docs/en/headless</a></td></tr>
+<tr><td>Permission modes</td><td><a href="https://code.claude.com/docs/en/permission-modes" target="_blank" rel="noopener">code.claude.com/docs/en/permission-modes</a></td></tr>
+<tr><td>Hooks guide</td><td><a href="https://code.claude.com/docs/en/hooks-guide" target="_blank" rel="noopener">code.claude.com/docs/en/hooks-guide</a></td></tr>
+<tr><td>Routines</td><td><a href="https://code.claude.com/docs/en/routines" target="_blank" rel="noopener">code.claude.com/docs/en/routines</a></td></tr>
+<tr><td>GitHub Actions</td><td><a href="https://code.claude.com/docs/en/github-actions" target="_blank" rel="noopener">code.claude.com/docs/en/github-actions</a></td></tr>
+<tr><td>Commands reference</td><td><a href="https://code.claude.com/docs/en/commands" target="_blank" rel="noopener">code.claude.com/docs/en/commands</a></td></tr>
+<tr><td>Agent SDK overview</td><td><a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener">code.claude.com/docs/en/agent-sdk/overview</a></td></tr>
+<tr><td>Changelog (live)</td><td><a href="https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md" target="_blank" rel="noopener">github.com/anthropics/claude-code/CHANGELOG.md</a></td></tr>
+</tbody>
+</table>
+</div>
+
+
+</main>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<!-- Prism JS for syntax highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // 1. Content already inlined (no injection needed)
+  // ============================================================
+
+  // ============================================================
+  // 2. Trigger Prism highlighting
+  // ============================================================
+  if (typeof Prism !== 'undefined') {
+    Prism.highlightAll();
+  }
+
+  // ============================================================
+  // 3. Copy buttons on every code block
+  // ============================================================
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrapper = btn.closest('.code-wrapper');
+      if (!wrapper) return;
+      const code = wrapper.querySelector('pre code');
+      if (!code) return;
+      const text = code.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1600);
+      }).catch(() => {
+        showToast('Copy failed');
+      });
+    });
+  });
+
+  // ============================================================
+  // 4. Heading anchor links (auto-add to h2, h3, h4 with id)
+  // ============================================================
+  document.querySelectorAll('h2[id], h3[id], h4[id]').forEach(h => {
+    const anchor = document.createElement('a');
+    anchor.className = 'heading-anchor';
+    anchor.href = '#' + h.id;
+    anchor.textContent = '#';
+    anchor.title = 'Copy link to this section';
+    anchor.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = window.location.origin + window.location.pathname + '#' + h.id;
+      navigator.clipboard.writeText(url).then(() => {
+        anchor.classList.add('copied');
+        anchor.textContent = '✓';
+        showToast('Link copied: #' + h.id);
+        history.replaceState(null, '', '#' + h.id);
+        setTimeout(() => {
+          anchor.classList.remove('copied');
+          anchor.textContent = '#';
+        }, 1600);
+      });
+    });
+    h.appendChild(anchor);
+  });
+
+  // Auto-add ids to headings that don't have one (for h4)
+  document.querySelectorAll('h4').forEach(h => {
+    if (!h.id) {
+      const slug = h.textContent.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 60);
+      if (slug) h.id = slug;
+      // Re-add anchor for newly id'd elements
+      const anchor = document.createElement('a');
+      anchor.className = 'heading-anchor';
+      anchor.href = '#' + h.id;
+      anchor.textContent = '#';
+      anchor.title = 'Copy link to this section';
+      anchor.addEventListener('click', (e) => {
+        e.preventDefault();
+        const url = window.location.origin + window.location.pathname + '#' + h.id;
+        navigator.clipboard.writeText(url).then(() => {
+          anchor.classList.add('copied');
+          anchor.textContent = '✓';
+          showToast('Link copied: #' + h.id);
+          history.replaceState(null, '', '#' + h.id);
+          setTimeout(() => {
+            anchor.classList.remove('copied');
+            anchor.textContent = '#';
+          }, 1600);
+        });
+      });
+      h.appendChild(anchor);
+    }
+  });
+
+  // ============================================================
+  // 5. Theme toggle
+  // ============================================================
+  const themeToggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+  const stored = (function() {
+    try { return localStorage.getItem('cc-guide-theme'); } catch { return null; }
+  })();
+  if (stored === 'light' || stored === 'dark') {
+    root.setAttribute('data-theme', stored);
+  }
+  themeToggle.addEventListener('click', () => {
+    const current = root.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('cc-guide-theme', next); } catch {}
+  });
+
+  // ============================================================
+  // 6. Share button — copies current URL with section anchor if present
+  // ============================================================
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Page link copied');
+    }).catch(() => {
+      showToast('Copy failed');
+    });
+  });
+
+  // ============================================================
+  // 7. Print button
+  // ============================================================
+  document.getElementById('printBtn').addEventListener('click', () => {
+    window.print();
+  });
+
+  // ============================================================
+  // 8. Sidebar search filter
+  // ============================================================
+  const searchInput = document.getElementById('searchInput');
+  const navItems = document.querySelectorAll('#sidebarNav > li');
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    navItems.forEach(li => {
+      const text = li.textContent.toLowerCase();
+      if (!q || text.includes(q)) {
+        li.classList.remove('hidden');
+      } else {
+        li.classList.add('hidden');
+      }
+    });
+  });
+
+  // Cmd+K / Ctrl+K to focus search
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+    if (e.key === 'Escape' && document.activeElement === searchInput) {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input'));
+      searchInput.blur();
+    }
+  });
+
+  // ============================================================
+  // 9. Scroll-spy: highlight current section in sidebar
+  // ============================================================
+  const sidebarLinks = document.querySelectorAll('#sidebarNav a');
+  const linkMap = new Map();
+  sidebarLinks.forEach(a => {
+    const id = a.getAttribute('href').slice(1);
+    linkMap.set(id, a);
+  });
+
+  const observerOptions = {
+    rootMargin: '-80px 0px -70% 0px',
+    threshold: 0
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.id;
+      const link = linkMap.get(id);
+      if (!link) return;
+      if (entry.isIntersecting) {
+        sidebarLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, observerOptions);
+
+  // Observe section / cluster headings
+  ['section-1','section-2','section-3','section-4','section-5','references',
+   'cluster-1','cluster-2','cluster-3','cluster-4',
+   'two-directions','commands-matrix'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+
+  // ============================================================
+  // 10. Toast utility
+  // ============================================================
+  const toast = document.getElementById('toast');
+  let toastTimeout;
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2200);
+  }
+
+  // ============================================================
+  // 11. On initial load, if URL has hash, ensure target is highlighted
+  // ============================================================
+  if (window.location.hash) {
+    const id = window.location.hash.slice(1);
+    const link = linkMap.get(id);
+    if (link) link.classList.add('active');
+  } else {
+    // Default: highlight first section
+    const first = document.querySelector('#sidebarNav a');
+    if (first) first.classList.add('active');
+  }
+
+})();
+</script>
+
+</body>
+</html>
