@@ -758,14 +758,20 @@ hr {
 
   <ul class="sidebar-nav" id="sidebarNav">
     <li><a href="#section-1" class="section">Section 1 — Landscape</a></li>
-    <li><a href="#section-2" class="section">Section 2 — Deep Dives</a></li>
+    <li><a href="#section-2" class="section">Section 2 — Core</a></li>
     <li><a href="#cluster-1" class="cluster">Memory &amp; Context</a></li>
     <li><a href="#cluster-2" class="cluster">Sub-agents</a></li>
     <li><a href="#cluster-3" class="cluster">Skills</a></li>
     <li><a href="#cluster-4" class="cluster">Execution Modes</a></li>
+    <li><a href="#section-2b" class="section">Section 2b — Extensibility</a></li>
+    <li><a href="#cluster-5" class="cluster">MCP</a></li>
+    <li><a href="#cluster-6" class="cluster">Plugins</a></li>
+    <li><a href="#cluster-7" class="cluster">Evals</a></li>
     <li><a href="#section-3" class="section">Section 3 — Boundaries</a></li>
     <li><a href="#two-directions" class="cluster">The Two Directions</a></li>
     <li><a href="#commands-matrix" class="cluster">Commands · Skills · Sub-agents</a></li>
+    <li><a href="#plugin-mcp-skill" class="cluster">Plugin · MCP · Skill</a></li>
+    <li><a href="#scope-model" class="cluster">Scope model</a></li>
     <li><a href="#section-4" class="section">Section 4 — Best Practices</a></li>
     <li><a href="#section-5" class="section">Section 5 — Deprecations</a></li>
     <li><a href="#references" class="section">Reference Links</a></li>
@@ -833,20 +839,27 @@ hr {
 <h3>Capability Layer — What It Can Do</h3>
 
 <div class="diagram">
-<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Capability layer diagram">
+<svg viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Capability layer diagram with five layers: Execution Modes, Context and Memory, Extensibility, Distribution and Quality, Integrations">
   <defs>
     <linearGradient id="layerGrad1" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.04"/>
     </linearGradient>
+    <linearGradient id="layerGrad2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="var(--warning)" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="var(--warning)" stop-opacity="0.03"/>
+    </linearGradient>
   </defs>
   <style>
     .layer-bg { fill: var(--bg-code); stroke: var(--border); stroke-width: 1; }
     .layer-bg-accent { fill: url(#layerGrad1); stroke: var(--accent); stroke-width: 1; stroke-opacity: 0.4; }
+    .layer-bg-warn { fill: url(#layerGrad2); stroke: var(--warning); stroke-width: 1; stroke-opacity: 0.4; }
     .layer-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; fill: var(--accent); text-transform: uppercase; }
+    .layer-label-warn { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; fill: var(--warning); text-transform: uppercase; }
     .layer-item { font-family: 'JetBrains Mono', monospace; font-size: 13px; fill: var(--text); }
     .layer-divider { fill: var(--text-tertiary); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
   </style>
+
   <!-- Layer 1: Execution Modes -->
   <rect x="20" y="20" width="680" height="70" rx="6" class="layer-bg-accent"/>
   <text x="36" y="42" class="layer-label">Execution Modes</text>
@@ -878,28 +891,37 @@ hr {
   <text x="195" y="232" class="layer-divider">│</text>
   <text x="215" y="232" class="layer-item">MCP</text>
   <text x="265" y="232" class="layer-divider">│</text>
-  <text x="285" y="232" class="layer-item">Plugins</text>
-  <text x="370" y="232" class="layer-divider">│</text>
-  <text x="390" y="232" class="layer-item">Agent SDK</text>
+  <text x="285" y="232" class="layer-item">Agent SDK</text>
 
-  <!-- Layer 4: Integrations -->
-  <rect x="20" y="260" width="680" height="70" rx="6" class="layer-bg"/>
-  <text x="36" y="282" class="layer-label">Integrations</text>
-  <text x="36" y="312" class="layer-item">GitHub Actions</text>
-  <text x="180" y="312" class="layer-divider">│</text>
-  <text x="200" y="312" class="layer-item">GitLab CI/CD</text>
-  <text x="330" y="312" class="layer-divider">│</text>
-  <text x="350" y="312" class="layer-item">Slack</text>
-  <text x="415" y="312" class="layer-divider">│</text>
-  <text x="435" y="312" class="layer-item">Channels</text>
+  <!-- Layer 4: Distribution & Quality (highlighted as NEW layer) -->
+  <rect x="20" y="260" width="680" height="70" rx="6" class="layer-bg-warn"/>
+  <text x="36" y="282" class="layer-label-warn">Distribution &amp; Quality</text>
+  <text x="36" y="312" class="layer-item">Plugins</text>
+  <text x="120" y="312" class="layer-divider">│</text>
+  <text x="140" y="312" class="layer-item">Marketplace</text>
+  <text x="265" y="312" class="layer-divider">│</text>
+  <text x="285" y="312" class="layer-item">Evals (evals.json)</text>
+  <text x="450" y="312" class="layer-divider">│</text>
+  <text x="470" y="312" class="layer-item">Managed Settings</text>
+
+  <!-- Layer 5: Integrations -->
+  <rect x="20" y="340" width="680" height="70" rx="6" class="layer-bg"/>
+  <text x="36" y="362" class="layer-label">Integrations</text>
+  <text x="36" y="392" class="layer-item">GitHub Actions</text>
+  <text x="180" y="392" class="layer-divider">│</text>
+  <text x="200" y="392" class="layer-item">GitLab CI/CD</text>
+  <text x="330" y="392" class="layer-divider">│</text>
+  <text x="350" y="392" class="layer-item">Slack</text>
+  <text x="415" y="392" class="layer-divider">│</text>
+  <text x="435" y="392" class="layer-item">Channels</text>
 </svg>
-<div class="diagram-caption">Four capability layers, stacked top-to-bottom</div>
+<div class="diagram-caption">Five capability layers — <strong style="color: var(--warning);">Distribution &amp; Quality</strong> is how teams ship and govern the layers above</div>
 </div>
 
 <!-- ============================================================
      SECTION 2
      ============================================================ -->
-<h2 id="section-2" class="section-heading" data-section="Section 2">Feature Deep Dives</h2>
+<h2 id="section-2" class="section-heading" data-section="Section 2">Core Capabilities</h2>
 
 <!-- CLUSTER 1 -->
 <h3 id="cluster-1" class="cluster-heading" data-cluster="Cluster 1">Memory &amp; Context</h3>
@@ -1074,14 +1096,44 @@ Organize feedback by priority: Critical → Warnings → Suggestions.</code></pr
 <tr><td><code>description</code></td><td>Drives auto-delegation. Include "use proactively" / "use when X" trigger phrases.</td></tr>
 <tr><td><code>tools</code></td><td>Comma-separated allow-list. Omit to inherit all. Supports <code>Agent(agent_type)</code> syntax.</td></tr>
 <tr><td><code>disallowedTools</code></td><td>Subtractive deny-list. Use <code>Skill(skill-name)</code> to block specific skills.</td></tr>
-<tr><td><code>model</code></td><td><code>haiku</code>, <code>sonnet</code>, <code>opus</code>, or <code>inherit</code> (default).</td></tr>
-<tr><td><code>permissionMode</code></td><td><code>default</code>, <code>acceptEdits</code>, <code>plan</code>, <code>bypassPermissions</code>.</td></tr>
+<tr><td><code>model</code></td><td><code>haiku</code>, <code>sonnet</code>, <code>opus</code>, full model ID, or <code>inherit</code> (default). See cost-governance note below.</td></tr>
+<tr><td><code>permissionMode</code></td><td><code>default</code>, <code>acceptEdits</code>, <code>plan</code>, <code>auto</code>, <code>dontAsk</code>, <code>bypassPermissions</code>.</td></tr>
 <tr><td><code>maxTurns</code></td><td>Hard cap on agentic turns.</td></tr>
 <tr><td><code>skills</code></td><td>Skill names to <strong>preload</strong> into the sub-agent's startup context (see Section 3).</td></tr>
+<tr><td><code>mcpServers</code></td><td>MCP servers to make available to this sub-agent only (inline or reference). See Cluster 5.</td></tr>
+<tr><td><code>hooks</code></td><td>Lifecycle hooks scoped to this sub-agent's lifetime (PreToolUse, PostToolUse, Stop).</td></tr>
 <tr><td><code>memory</code></td><td><code>user</code>, <code>project</code>, or <code>local</code> — persistent memory scope for this sub-agent.</td></tr>
 <tr><td><code>background</code></td><td><code>true</code> runs as a background task.</td></tr>
+<tr><td><code>isolation</code></td><td><code>worktree</code> runs the sub-agent in a temporary git worktree — isolated changes.</td></tr>
+<tr><td><code>effort</code></td><td>Reasoning effort override: <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, or <code>max</code> (max is Opus 4.6 only). Default: inherits from session.</td></tr>
+<tr><td><code>initialPrompt</code></td><td>Auto-submitted as the first user turn when this agent runs as the main session (via <code>--agent</code>).</td></tr>
 </tbody>
 </table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Precedence on name conflict</div>
+<p>When multiple sub-agents share a name: <strong>session-defined</strong> (<code>--agents</code> JSON flag) → <strong>project</strong> (<code>.claude/agents/</code>) → <strong>user</strong> (<code>~/.claude/agents/</code>) → <strong>plugin-provided</strong>. Higher-priority wins. Managed sub-agents (from org settings) take precedence over all of these.</p>
+</div>
+
+<h4>Cost Governance — The <code>model: inherit</code> Tradeoff</h4>
+<p>The <code>model</code> field looks innocent. It's actually the lever that controls how much a shared team agent costs to run.</p>
+
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Setting</th><th>Behavior</th><th>Tradeoff</th></tr></thead>
+<tbody>
+<tr><td><code>model: inherit</code> (default)</td><td>Uses whatever model the parent session is using</td><td>If a user runs Opus in their session, every spawned sub-agent runs on Opus too — <strong>cost scales with the most expensive caller</strong></td></tr>
+<tr><td><code>model: haiku</code></td><td>Always Haiku</td><td>Predictable cheap; suitable for <strong>read-only/exploration</strong> agents (research, summarization, log scanning)</td></tr>
+<tr><td><code>model: sonnet</code></td><td>Always Sonnet</td><td>Quality floor guarantee; suitable for <strong>write-capable</strong> agents (reviewers, generators)</td></tr>
+<tr><td><code>model: opus</code></td><td>Always Opus</td><td>Reserved for genuine architectural reasoning; rarely the right default</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout warning">
+<div class="callout-label">Cost governance pattern for shared agents</div>
+<p>For agents shared across a team (committed to <code>.claude/agents/</code> in your repo), <strong>specify an explicit model</strong>. Don't leave it as <code>inherit</code> — that delegates cost control to whoever happens to invoke the agent. Pin Haiku for exploration agents, Sonnet for production-grade write agents, and reserve Opus for narrow, justified cases.</p>
 </div>
 
 <h4>Isolation Rules</h4>
@@ -1261,6 +1313,101 @@ Your instructions here...</code></pre>
 <div class="callout note">
 <div class="callout-label">Note</div>
 <p>Custom commands (<code>.claude/commands/deploy.md</code>) have been <strong>merged into skills</strong>. Both paths work. Skills add: supporting files directory, frontmatter control, subagent execution. Skills take precedence if names conflict.</p>
+</div>
+
+<h4>More Frontmatter Fields Worth Knowing</h4>
+
+<h5><code>argument-hint</code> — autocomplete helper for team-shared skills</h5>
+<p>When teammates type your skill's slash command, the autocomplete UI shows the <code>argument-hint</code> as a placeholder. Without it, they have to read your SKILL.md to know what to pass.</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">---
+name: fix-issue
+description: Address a GitHub issue with our team conventions
+argument-hint: &lt;issue-number&gt; [--draft]
+---
+
+Fix issue $1 following our conventions.
+$2 == "--draft" ? open as draft PR : open as ready-for-review.</code></pre>
+</div>
+
+<p>In the slash menu, this surfaces as <code>/fix-issue &lt;issue-number&gt; [--draft]</code> — teammates can use it without docs.</p>
+
+<h5><code>effort</code> — when to override</h5>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Level</th><th>Use for</th></tr></thead>
+<tbody>
+<tr><td><code>low</code></td><td>Quick summaries, log scans, single-fact lookups — fast and cheap</td></tr>
+<tr><td><code>medium</code></td><td>Default for most operational tasks (default; usually inherits from session)</td></tr>
+<tr><td><code>high</code></td><td>Code review, refactoring decisions, multi-file changes</td></tr>
+<tr><td><code>xhigh</code> / <code>max</code></td><td>Architecture decisions, security reviews of new systems (<code>max</code> requires Opus 4.6)</td></tr>
+</tbody>
+</table>
+</div>
+<p>If you don't set <code>effort</code>, the skill inherits from the session. For shared team skills, set it explicitly — teammates running on cheap defaults will get worse output than you expect, and teammates on Opus + max will burn unexpected cost.</p>
+
+<h5><code>paths:</code> — scoping skills to a layer of the stack</h5>
+<p>A skill with <code>paths:</code> only activates when Claude is working with matching files. The skill's description still appears in the slash menu, but Claude won't auto-invoke it outside the matched paths.</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown"># Terraform skill — only active when working with .tf files
+---
+name: terraform-conventions
+description: Apply team Terraform naming and module conventions
+paths:
+  - "**/*.tf"
+  - "**/*.tfvars"
+---
+
+# Lambda handler skill — only active for our handler files
+---
+name: lambda-handler-pattern
+description: Wrap a Lambda handler with our error-reporting and tracing
+paths:
+  - "services/lambda/**/handler.ts"
+  - "services/lambda/**/handler.py"
+---
+
+# Test-file skill — only active when writing tests
+---
+name: test-style
+description: Apply our testing conventions
+paths:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "tests/**"
+---</code></pre>
+</div>
+
+<p>Use <code>paths:</code> when the skill is layer-specific (IaC files, handlers, tests, migrations, etc.). It keeps the skill's content out of Claude's context budget when working on unrelated parts of the codebase.</p>
+
+<h4>Supporting Files — The Token Cost Model</h4>
+<p>A skill can have more than just <code>SKILL.md</code>:</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">tree</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">.claude/skills/api-builder/
+├── SKILL.md             ← always loaded on skill invocation
+├── reference.md         ← only loaded if Claude reads it
+├── examples/
+│   ├── crud.md
+│   └── auth.md          ← only loaded if Claude reads it
+└── schemas/
+    └── openapi.yaml     ← only loaded if Claude reads it</code></pre>
+</div>
+
+<p>The cost model:</p>
+<ul>
+<li><strong><code>SKILL.md</code></strong> — loaded into context the moment the skill is invoked. Pay this cost every time.</li>
+<li><strong>Supporting files</strong> — listed in <code>SKILL.md</code> but NOT loaded. Claude reads them on-demand if a task warrants it. Pay only when used.</li>
+</ul>
+
+<div class="callout note">
+<div class="callout-label">Pattern: keep SKILL.md short, push detail to supporting files</div>
+<p>If your skill has a 300-line API spec, don't paste it into SKILL.md — that 300 lines is paid every invocation. Put it in <code>reference.md</code> and have SKILL.md say <em>"See <code>reference.md</code> for the full API spec; read it when you need endpoint details."</em> Claude pulls it in only when actually needed.</p>
 </div>
 
 <h4>Skill Scopes</h4>
@@ -1547,6 +1694,438 @@ claude -p "Continue that review" --resume "$session_id"</code></pre>
 </div>
 
 <!-- ============================================================
+     SECTION 2B — EXTENSIBILITY & DISTRIBUTION
+     ============================================================ -->
+<h2 id="section-2b" class="section-heading" data-section="Section 2b">Extensibility &amp; Distribution</h2>
+
+<p>Section 2 covered <em>what an individual developer interacts with in their session</em>. This section covers <em>how Claude Code gets extended and distributed across a team</em> — capability extension (MCP), packaging and distribution (Plugins), and quality assurance on agentic behavior (Evals).</p>
+
+<!-- CLUSTER 5: MCP -->
+<h3 id="cluster-5" class="cluster-heading" data-cluster="Cluster 5">MCP — Model Context Protocol</h3>
+<p><strong>Source:</strong> <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener">code.claude.com/docs/en/mcp</a></p>
+
+<h4>What MCP Is</h4>
+<p>MCP is the protocol Claude Code uses to talk to external tools and data sources — databases, browsers, ticket systems, APIs, internal services. An MCP server exposes a set of tools and resources; Claude Code, as the MCP client, discovers them and calls them like any other tool.</p>
+
+<p>Think of MCP as <strong>capability extension</strong>: it gives Claude tools it doesn't have by default. CLAUDE.md gives Claude <em>knowledge</em>, Skills give Claude <em>workflows</em>, MCP gives Claude <em>tools</em>.</p>
+
+<h4>Server Types — stdio vs HTTP/SSE/WS</h4>
+<p>MCP servers come in three transport flavors. The transport changes the connection lifecycle, auth model, and CI suitability.</p>
+
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Transport</th><th>Lifecycle</th><th>Auth</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td><strong><code>stdio</code></strong></td><td>Claude spawns the server as a subprocess; dies when session ends</td><td>Inherits process env; no network auth</td><td>Local tools (filesystem, git, Playwright), official Anthropic servers, anything that ships as a binary or npm package</td></tr>
+<tr><td><strong><code>http</code></strong> (Streamable HTTP)</td><td>Long-lived HTTP connection; reconnect on failure</td><td>Authorization header, OAuth, or custom</td><td>Hosted services (Notion, Linear, GitHub, your internal APIs), services behind SSO</td></tr>
+<tr><td><strong><code>sse</code></strong> (Server-Sent Events)</td><td>HTTP long-poll variant; one-way push from server</td><td>Same as http</td><td>Legacy hosted MCP; new servers should prefer <code>http</code></td></tr>
+<tr><td><strong><code>ws</code></strong> (WebSocket)</td><td>Persistent duplex connection</td><td>Same as http; auth on handshake</td><td>Rare; high-frequency bidirectional data</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Rule of thumb</div>
+<p>For a tool that runs <em>on your machine</em>, use <code>stdio</code>. For a tool that runs <em>on someone else's server</em>, use <code>http</code>. <code>sse</code> and <code>ws</code> are special cases.</p>
+</div>
+
+<h4>Configuration: <code>.mcp.json</code></h4>
+<p>MCP servers are declared in <code>.mcp.json</code>. The scope of the file determines who sees the servers:</p>
+
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Scope</th><th>Path</th><th>Visibility</th></tr></thead>
+<tbody>
+<tr><td>Managed</td><td><code>/Library/Application Support/ClaudeCode/.mcp.json</code></td><td>All org users — cannot be disabled by user</td></tr>
+<tr><td>User</td><td><code>~/.claude.json</code> (<code>mcpServers</code> key)</td><td>All your projects</td></tr>
+<tr><td>Project</td><td><code>./.mcp.json</code> (repo root)</td><td>Team-shared via git</td></tr>
+<tr><td>Local</td><td><code>./.mcp.local.json</code></td><td>Personal overrides, gitignored</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>HTTP MCP — Auth Patterns</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">json — .mcp.json</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-json">{
+  "mcpServers": {
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/sse",
+      "headers": {
+        "Authorization": "Bearer ${LINEAR_API_KEY}"
+      }
+    },
+    "internal-api": {
+      "type": "http",
+      "url": "https://mcp.internal.company.com/v1",
+      "headers": {
+        "Authorization": "Bearer ${INTERNAL_MCP_TOKEN}",
+        "X-Tenant-Id": "${TENANT_ID}"
+      }
+    },
+    "notion": {
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp"
+    }
+  }
+}</code></pre>
+</div>
+
+<p><strong>Credential resolution order:</strong></p>
+<ol>
+<li><code>${VAR}</code> interpolated from the process environment at session start</li>
+<li>If the server uses OAuth (no static header), Claude prompts on first use and stores tokens in <code>~/.claude/oauth/</code></li>
+<li>For managed deployments, secrets can be pre-provisioned in <code>~/.claude/secrets.json</code> or fetched via <code>apiKeyHelper</code></li>
+</ol>
+
+<div class="callout warning">
+<div class="callout-label">Never commit credentials</div>
+<p>Use <code>${VAR}</code> interpolation in project <code>.mcp.json</code> files; the actual values come from each developer's environment. For CI, set the env vars in the pipeline's secret store and reference them the same way.</p>
+</div>
+
+<h4>Scoping MCP to a Sub-agent</h4>
+<p>By default, all servers in <code>.mcp.json</code> are loaded into every session. Their tool descriptions go into context whether or not Claude needs them — that's <strong>context cost paid on every turn</strong>. For noisy servers (Playwright with 30+ tools, Slack with full directory access), this adds up.</p>
+
+<p>The alternative: scope an MCP server to a specific sub-agent. The server exists only during that sub-agent's lifetime, and its tools never enter the main session's context.</p>
+
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">markdown — .claude/agents/ui-tester.md</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-markdown">---
+name: ui-tester
+description: Browser QA specialist for validating flows before release. Use proactively before merging UI changes.
+tools: Read, Bash
+model: sonnet
+permissionMode: plan
+mcpServers:
+  playwright:
+    type: stdio
+    command: npx
+    args: ["-y", "@playwright/mcp@latest"]
+---
+
+You are a release validation agent. Open the app, validate critical flows
+(login, checkout, dashboard). Capture failures clearly and return a concise
+release-readiness summary. Do not modify code.</code></pre>
+</div>
+
+<p>Playwright's tools are now <em>only</em> visible inside the <code>@ui-tester</code> sub-agent. The main session never pays the context cost.</p>
+
+<div class="callout note">
+<div class="callout-label">Decision rule</div>
+<ul style="margin-top: 4px;">
+<li><strong>Global <code>.mcp.json</code></strong>: lightweight, frequently-used servers (filesystem, git, your design system docs). Maybe 3–6 total.</li>
+<li><strong>Agent-scoped <code>mcpServers</code></strong>: noisy/large servers used in one workflow (Playwright, Slack, AWS console, full GitHub API). Keep them out of the main context.</li>
+</ul>
+</div>
+
+<h4>HTTP MCP in CI — Risks &amp; Mitigations</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Risk</th><th>What goes wrong</th><th>Mitigation</th></tr></thead>
+<tbody>
+<tr><td>Connection timeout</td><td>HTTP MCP server slow or down → session hangs</td><td>Use <code>--bare</code> in CI; declare MCP only in agent-scoped configs so optional servers don't block startup</td></tr>
+<tr><td>OAuth requires interactive auth</td><td>OAuth flow has no human to consent in CI</td><td>Use API-key auth (<code>Authorization</code> header) for CI; reserve OAuth for interactive dev</td></tr>
+<tr><td>Credential leakage</td><td><code>${VAR}</code> not set → token is literal string in headers, fails open</td><td>Validate env vars exist before invoking; fail fast if missing</td></tr>
+<tr><td>Rate limits across parallel jobs</td><td>Multiple CI runners hitting same MCP endpoint → 429s</td><td>Mock or stub the MCP server in CI when possible; otherwise stagger jobs</td></tr>
+<tr><td>Tool description drift</td><td>Hosted MCP server updates tools mid-pipeline-run → behavior changes</td><td>Pin the MCP server version in <code>.mcp.json</code> where supported; treat hosted MCP as an upstream dependency</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Useful CLI Commands</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">claude mcp list                  # see configured servers
+claude mcp add &lt;name&gt; &lt;url&gt;       # add a server (interactive)
+claude mcp remove &lt;name&gt;          # remove a server
+claude mcp test &lt;name&gt;            # validate a server is reachable + auth works
+/mcp                             # in-session: list active servers and their tools</code></pre>
+</div>
+
+<!-- CLUSTER 6: PLUGINS -->
+<h3 id="cluster-6" class="cluster-heading" data-cluster="Cluster 6">Plugins</h3>
+<p><strong>Source:</strong> <a href="https://code.claude.com/docs/en/plugins" target="_blank" rel="noopener">code.claude.com/docs/en/plugins</a></p>
+
+<h4>What a Plugin Is</h4>
+<p>A plugin is the <strong>highest-level packaging unit</strong> in Claude Code. It bundles skills, sub-agents, hooks, MCP servers, and LSP configurations into a single installable package. A team installs one plugin and immediately gets everything configured — no manual setup for each component.</p>
+
+<p>If a skill is a single workflow and a sub-agent is a single specialist, a plugin is <strong>the team's whole opinionated toolkit</strong> shipped as one unit.</p>
+
+<h4>Plugin Anatomy</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">tree</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash">my-plugin/
+├── .claude-plugin/
+│   └── plugin.json            ← REQUIRED — the manifest
+├── skills/
+│   └── my-skill/
+│       └── SKILL.md
+├── agents/
+│   └── specialist.md          ← sub-agent definitions
+├── commands/                  ← legacy command files (still work)
+│   └── my-command.md
+├── hooks/
+│   └── hooks.json             ← plugin-scoped hooks
+├── .mcp.json                  ← MCP servers shipped with the plugin
+├── .lsp.json                  ← LSP server configs
+├── settings.json              ← default settings users get
+└── bin/
+    └── helper.sh              ← scripts the plugin's skills/agents can call</code></pre>
+</div>
+
+<h4>The Manifest — <code>plugin.json</code></h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">json — .claude-plugin/plugin.json</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-json">{
+  "name": "pr-review",
+  "description": "Complete PR review workflow with security and test coverage checks",
+  "version": "1.0.0",
+  "author": { "name": "Platform Team", "email": "platform@company.com" },
+  "repository": "https://github.com/company/cc-pr-review",
+  "license": "MIT"
+}</code></pre>
+</div>
+
+<p>The manifest identifies the plugin and provides metadata. Plugin-provided commands and skills are <strong>namespaced</strong> as <code>plugin-name:command-name</code> to avoid conflicts with project-level configuration.</p>
+
+<h4>Plugin Scope Hierarchy</h4>
+<p>Plugins exist at multiple scopes — same model as Skills and Sub-agents, but with one important wrinkle: <strong>plugin scope determines visibility, but a plugin's internal components inherit "where the plugin is enabled" as their scope</strong>.</p>
+
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Plugin scope</th><th>Where it's defined</th><th>Where it's visible</th></tr></thead>
+<tbody>
+<tr><td>Managed</td><td>Org-managed plugin directory; locked by <code>enabledPlugins</code> in managed policy</td><td>All org users, mandatory</td></tr>
+<tr><td>User</td><td><code>~/.claude/plugins/</code></td><td>All your projects</td></tr>
+<tr><td>Project</td><td><code>.claude/plugins/</code> committed to repo</td><td>Anyone who checks out the repo and trusts it</td></tr>
+<tr><td>Local</td><td><code>~/.claude/plugins-local/</code> or via <code>source: 'settings'</code> inline</td><td>Just you, gitignored</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Precedence on name conflict</div>
+<p>For name conflicts between plugin-provided components and same-name top-level components: <strong>managed &gt; user &gt; project &gt; plugin</strong>. Top-level components (a skill in <code>.claude/skills/</code>) always win over plugin-provided components with the same name. This means a plugin can't accidentally override your project's existing config.</p>
+</div>
+
+<h4>Plugin Subagent Security Boundary</h4>
+<div class="callout critical">
+<div class="callout-label">Verified from official docs</div>
+<p>For security reasons, <strong>plugin sub-agents do not support the <code>hooks</code>, <code>mcpServers</code>, or <code>permissionMode</code> frontmatter fields</strong>. These fields are stripped at load time. If a plugin's <code>agents/</code> directory tries to use them, they have no effect.</p>
+</div>
+
+<p>The reasoning: a plugin you install shouldn't be able to silently grant itself broad permissions, run arbitrary shell on your machine via hooks, or attach MCP servers to itself without your explicit knowledge. If you need those fields, the agent has to live in <code>.claude/agents/</code> or <code>~/.claude/agents/</code> — somewhere <em>you</em> control, not somewhere an installed plugin owns.</p>
+
+<p><strong>What plugin sub-agents <em>can</em> still do:</strong> <code>tools</code> allow-list (subset of what the user already has), <code>disallowedTools</code>, <code>model</code>, <code>maxTurns</code>, <code>skills</code>, <code>memory</code>, <code>background</code>, <code>isolation</code>, <code>effort</code>, <code>initialPrompt</code>.</p>
+
+<h4>Installation &amp; Lifecycle</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash"># Discovery
+/plugin discover                     # browse known marketplaces
+/plugin marketplace                  # alias
+
+# Installation
+/plugin install github:company/pr-review            # from GitHub
+/plugin install https://git.internal.com/cc-plugins/pr-review   # from git URL
+/plugin install npm:@company/cc-pr-review            # from npm
+/plugin install ./local-plugin                       # from local path
+
+# Lifecycle
+claude plugin list                   # what's installed
+claude plugin enable &lt;name&gt;          # toggle on
+claude plugin disable &lt;name&gt;         # toggle off (without uninstalling)
+claude plugin uninstall &lt;name&gt;
+claude plugin validate &lt;name&gt;        # check manifest + structure
+claude plugin tag &lt;version&gt;          # v2.1.121+: create a release git tag with version check</code></pre>
+</div>
+
+<h4>Marketplaces</h4>
+<p>A marketplace is a directory of installable plugins. Plugins can be sourced from:</p>
+<ul>
+<li>GitHub repositories</li>
+<li>Arbitrary git URLs (internal git servers)</li>
+<li>Local filesystem paths</li>
+<li>npm packages</li>
+<li><strong>Inline</strong> via <code>source: 'settings'</code> (v2.1.80+) — embed a plugin definition directly in a settings file without a separate repo</li>
+</ul>
+
+<h5>Private marketplace pattern (org deployment)</h5>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">json — managed-settings.json</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-json">{
+  "extraKnownMarketplaces": [
+    "https://internal-plugins.company.com/marketplace.json"
+  ],
+  "strictKnownMarketplaces": true,
+  "enabledPlugins": [
+    "company-platform:pr-review",
+    "company-platform:security-baseline",
+    "company-platform:terraform-conventions"
+  ],
+  "deniedPlugins": [
+    "*"
+  ]
+}</code></pre>
+</div>
+
+<p>This setup says: <em>"Trust only our internal marketplace; auto-install these three plugins for all org users; deny everything else."</em> Deployed via the managed settings path, so individual users can't override it.</p>
+
+<h4>Auto-Update Behavior</h4>
+<ul>
+<li>By default, plugins auto-update on session start if a newer version is published to the marketplace</li>
+<li><strong>This means CI runs may pick up new plugin versions mid-pipeline</strong> — a real risk for reproducibility</li>
+<li>Pin versions in <code>plugin.json</code> dependencies where the plugin format supports it</li>
+<li>In CI, use <code>--bare</code> (which skips plugin loading entirely) for the strictest determinism</li>
+<li>For team-controlled plugin updates: enforce via the managed marketplace, pin in <code>enabledPlugins</code> with explicit version refs</li>
+</ul>
+
+<div class="callout warning">
+<div class="callout-label">CI gotcha</div>
+<p>If your CI pipeline relies on a plugin (e.g., for a custom review workflow), a marketplace push <em>during your pipeline run</em> can change behavior between jobs in the same workflow. Either use <code>--bare</code> and explicitly install the plugin at a pinned version, or treat plugins as part of the toolchain version-locked alongside the Claude Code version.</p>
+</div>
+
+<!-- CLUSTER 7: EVALS -->
+<h3 id="cluster-7" class="cluster-heading" data-cluster="Cluster 7">Evals</h3>
+<p><strong>Source:</strong> <a href="https://code.claude.com/docs/en/evals" target="_blank" rel="noopener">code.claude.com/docs/en/evals</a></p>
+
+<h4>What Evals Are</h4>
+<p>Evals are <strong>regression tests for agentic behavior</strong>. You write a test case as a prompt + expected outcome, run it through a configured agent or skill, and the eval scores whether Claude's actual behavior matched. They're the answer to "how do we know our team's shared skill or sub-agent didn't get worse after that last edit?"</p>
+
+<p>If you've ever rewritten a skill description, deployed it, and discovered three days later that the skill stopped auto-triggering — that's the failure mode evals exist to catch.</p>
+
+<h4>Evals ≠ Unit Tests</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th></th><th>Unit tests</th><th>Evals</th></tr></thead>
+<tbody>
+<tr><td><strong>What's tested</strong></td><td>Deterministic code paths</td><td>Claude's judgment given a prompt</td></tr>
+<tr><td><strong>Pass criterion</strong></td><td>Output exactly matches expected</td><td>Output meets a judgment criterion (often LLM-as-judge)</td></tr>
+<tr><td><strong>Run frequency</strong></td><td>Every commit</td><td>Before releasing a shared skill/agent; nightly in CI</td></tr>
+<tr><td><strong>Cost per run</strong></td><td>Microseconds</td><td>One full agent execution + a judge call per test case</td></tr>
+<tr><td><strong>Stability</strong></td><td>100% deterministic</td><td>Probabilistic — flakes are expected; trends matter more than single runs</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Anatomy of an Eval — <code>evals.json</code></h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">json — .claude/evals/pr-reviewer.evals.json</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-json">{
+  "name": "pr-reviewer regression suite",
+  "agent": "pr-reviewer",
+  "cases": [
+    {
+      "name": "flags missing error handling",
+      "input": "Review this diff: [diff with unhandled promise rejection]",
+      "expect": {
+        "type": "judge",
+        "criterion": "Response mentions the unhandled rejection on line X and proposes a fix",
+        "model": "sonnet"
+      }
+    },
+    {
+      "name": "does not flag style preferences as critical",
+      "input": "Review this diff: [diff using let instead of const, no other issues]",
+      "expect": {
+        "type": "judge",
+        "criterion": "Response does NOT mark const/let as Critical; it's Suggestion-tier at most"
+      }
+    },
+    {
+      "name": "uses required output buckets",
+      "input": "Review this diff: [any diff]",
+      "expect": {
+        "type": "contains_all",
+        "values": ["Critical", "Warnings", "Suggestions"]
+      }
+    }
+  ]
+}</code></pre>
+</div>
+
+<h4>Expectation Types</h4>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Type</th><th>What it checks</th><th>When to use</th></tr></thead>
+<tbody>
+<tr><td><code>exact</code></td><td>Output matches a string exactly</td><td>Deterministic outputs (parsed JSON keys, fixed tool calls)</td></tr>
+<tr><td><code>contains</code> / <code>contains_all</code></td><td>Output includes substring(s)</td><td>Required output structure (headers, sections, tags)</td></tr>
+<tr><td><code>regex</code></td><td>Output matches a pattern</td><td>Output format checks (file paths, line refs)</td></tr>
+<tr><td><code>judge</code></td><td>An LLM judges if the criterion is met</td><td>Semantic correctness — "does the response address the actual issue?"</td></tr>
+<tr><td><code>tool_called</code></td><td>A specific tool was invoked</td><td>Verifying the agent uses the right tool for a task</td></tr>
+<tr><td><code>no_tool_called</code></td><td>A specific tool was NOT invoked</td><td>Verifying a read-only agent didn't try to write</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>When to Write Evals</h4>
+<ul>
+<li><strong>After a regression</strong> — a skill stops triggering, an agent gives worse output. Add an eval case so the regression can't return silently.</li>
+<li><strong>Before releasing a shared plugin</strong> — evals are how you assert the plugin's components still behave when shipped to teammates.</li>
+<li><strong>After a model upgrade</strong> — Anthropic releases a new Sonnet; run your eval suite to compare behavior. This is where you catch "the new model is faster but loses our team's review style."</li>
+<li><strong>When two team members disagree about expected behavior</strong> — write an eval. The eval is the canonical answer.</li>
+</ul>
+
+<h4>Running Evals</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-bash"># Local
+claude evals run .claude/evals/pr-reviewer.evals.json
+
+# Filter to one case
+claude evals run .claude/evals/pr-reviewer.evals.json --case "flags missing error handling"
+
+# CI — JSON output for parsing
+claude evals run .claude/evals/ --output-format json &gt; eval-results.json
+
+# Compare two model configurations
+claude evals run .claude/evals/ --model sonnet --label baseline
+claude evals run .claude/evals/ --model opus --label upgrade-candidate
+claude evals compare baseline upgrade-candidate</code></pre>
+</div>
+
+<h4>Evals in CI</h4>
+<div class="code-wrapper">
+<div class="code-header"><span class="lang">yaml — .github/workflows/eval.yml</span><button class="copy-btn">Copy</button></div>
+<pre><code class="language-yaml">name: Claude Code Evals
+on:
+  pull_request:
+    paths:
+      - '.claude/agents/**'
+      - '.claude/skills/**'
+      - '.claude/plugins/**'
+  schedule:
+    - cron: '0 8 * * *'  # nightly
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude evals run .claude/evals/ \
+            --output-format json \
+            --bail-on-regression \
+            &gt; eval-results.json
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: eval-results.json</code></pre>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Trend over single runs</div>
+<p>A single eval failure doesn't mean the agent regressed — it might be model nondeterminism. Track pass rate over the last 5–10 runs for each case. A case that was 95% passing and drops to 60% is a real regression. A case that was 80% passing and is now 70% is noise.</p>
+</div>
+
+
+<!-- ============================================================
      SECTION 3
      ============================================================ -->
 <h2 id="section-3" class="section-heading" data-section="Section 3">Critical Boundaries &amp; Discriminations</h2>
@@ -1690,9 +2269,7 @@ to all IaC work. Update memory with project-specific decisions as you discover t
 <tr><td>What goes into context</td><td>Skill content <strong>is</strong> the task prompt</td><td>Skills are <strong>standing knowledge</strong> injected before any task</td></tr>
 <tr><td>Who controls the system prompt</td><td>The agent type (<code>Explore</code>, <code>Plan</code>, custom)</td><td>Your sub-agent's markdown body</td></tr>
 <tr><td>Skill content lifecycle</td><td>IS the first message</td><td>Injected at startup, persists throughout</td></tr>
-<tr><td>Compatible with <code>disable-model-invocation: true</code>?</td><td>✅ Yes — independent flags. <code>disable-model-invocation</code> controls who can trigger the skill;  <code>context: fork</code>  controls where it runs. They combine without conflict.</td><td>✅ Yes — independent flags. <code>disable-model-invocation</code> controls auto-invocation in normal sessions; <code>skills:</code> controls startup injection into a sub-agent. They operate on different axes.
-
-</td></tr>
+<tr><td>Compatible with <code>disable-model-invocation: true</code>?</td><td>✅ Yes — orthogonal flags. The flag suppresses auto-invocation; <code>context: fork</code> controls where it runs.</td><td>✅ Yes — orthogonal flags. <code>skills:</code> is a startup-injection mechanism, independent of auto-invocation.</td></tr>
 <tr><td>What the field does NOT do</td><td>—</td><td><code>skills:</code> controls injection, <strong>not access</strong>. File-system-capable sub-agents can still discover other project skills via <code>Glob</code> on <code>.claude/skills/</code>. To block, use <code>disallowedTools: Skill(name)</code>.</td></tr>
 <tr><td>Reusability unit</td><td>The <strong>skill</strong></td><td>The <strong>sub-agent</strong></td></tr>
 </tbody>
@@ -1832,6 +2409,88 @@ to all IaC work. Update memory with project-specific decisions as you discover t
 </ul>
 </div>
 
+<h3 id="plugin-mcp-skill">Plugin vs MCP vs Skill — Extending Claude's Capabilities</h3>
+<p>Three different mechanisms that all "extend Claude Code", but they extend it in completely different ways.</p>
+
+<div class="table-wrapper">
+<table>
+<thead><tr><th></th><th>MCP</th><th>Skill</th><th>Plugin</th></tr></thead>
+<tbody>
+<tr><td><strong>Extends what</strong></td><td>Tools (capability)</td><td>Workflows (procedure)</td><td>Distribution (packaging)</td></tr>
+<tr><td><strong>What it gives Claude</strong></td><td>New tools to call (databases, APIs, browsers)</td><td>A reusable, named workflow</td><td>A bundle of skills + agents + MCP + hooks</td></tr>
+<tr><td><strong>Lives where</strong></td><td><code>.mcp.json</code> + an external server process</td><td><code>.claude/skills/&lt;name&gt;/</code></td><td><code>.claude/plugins/&lt;name&gt;/</code> + a marketplace</td></tr>
+<tr><td><strong>Mental model</strong></td><td>"Connect Claude to <em>this thing</em>"</td><td>"Encode <em>this procedure</em> so it's reusable"</td><td>"Ship <em>this whole toolkit</em> as one install"</td></tr>
+<tr><td><strong>Example</strong></td><td>Linear MCP — Claude can read/write Linear tickets</td><td><code>/pr-summary</code> — pull diff, summarize</td><td><code>company:platform-baseline</code> — ships PR review skill, security agent, MCP for internal APIs, lint hooks, all at once</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">They compose, they don't replace each other</div>
+<p>A typical team plugin <em>contains</em> skills, agents, and MCP server configs. The plugin is the distribution unit; the skill is one workflow inside it; MCP is one of several capability extensions the plugin ships. Don't pick "plugin <em>vs</em> skill" — pick which layer the new thing belongs at.</p>
+</div>
+
+<h3 id="plugin-vs-skill">Plugin vs Standalone Skill — When to Bundle</h3>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Use this</th><th>When</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td><strong>Standalone skill</strong> in <code>.claude/skills/</code></td><td>Individual or team workflow not worth packaging</td><td>One file, one purpose. Versioning is the repo's versioning.</td></tr>
+<tr><td><strong>Plugin</strong> bundling skills + agents + MCP</td><td>Cross-cutting toolkit used by multiple teams or repos</td><td>One install gives users the whole opinionated stack. Versioned independently.</td></tr>
+<tr><td><strong>Plugin via private marketplace</strong></td><td>Org-wide deployment, mandated baseline</td><td>Managed settings can <em>require</em> the plugin be installed and enabled.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Decision heuristic:</strong> If the components only work in one repo, keep them in <code>.claude/</code>. If they form a coherent toolkit that other repos would also want, package them as a plugin and host on a marketplace.</p>
+
+<h3 id="scope-model">Scope Model — Plugin · Skill · Agent · MCP</h3>
+<p>All four extensibility mechanisms share the same scope hierarchy (managed → user → project → local / plugin), but the precedence rules differ in subtle ways. The unified picture:</p>
+
+<div class="table-wrapper">
+<table>
+<thead><tr><th>Mechanism</th><th>Managed</th><th>User</th><th>Project</th><th>Local / Plugin</th></tr></thead>
+<tbody>
+<tr><td><strong>Plugin</strong></td><td><code>enabledPlugins</code> in managed policy</td><td><code>~/.claude/plugins/</code></td><td><code>.claude/plugins/</code> (committed)</td><td>Inline via <code>source: 'settings'</code></td></tr>
+<tr><td><strong>Skill</strong></td><td><code>/Library/.../skills/</code></td><td><code>~/.claude/skills/</code></td><td><code>.claude/skills/</code></td><td>Plugin-provided (<code>&lt;plugin&gt;:&lt;skill&gt;</code> namespace)</td></tr>
+<tr><td><strong>Sub-agent</strong></td><td><code>/Library/.../agents/</code> (managed)</td><td><code>~/.claude/agents/</code></td><td><code>.claude/agents/</code></td><td>Plugin-provided + <code>--agents</code> JSON (session-only)</td></tr>
+<tr><td><strong>MCP server</strong></td><td>Managed <code>.mcp.json</code></td><td>User <code>~/.claude.json</code></td><td>Project <code>./.mcp.json</code></td><td><code>./.mcp.local.json</code> + agent-scoped <code>mcpServers:</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Precedence rules</h4>
+<ul>
+<li><strong>Skills, Sub-agents, MCP:</strong> Managed &gt; User &gt; Project &gt; Plugin/Local. A managed entry can't be overridden; a top-level project entry beats a plugin-provided entry with the same name.</li>
+<li><strong>Sub-agents have one extra layer:</strong> session-defined (via <code>--agents</code> JSON flag) is highest priority — even higher than managed for that single session.</li>
+<li><strong>Plugin scope determines visibility, not the scope of plugin internals:</strong> a project-scoped plugin's skills and agents are visible "where the plugin is enabled." You can't independently scope a single skill inside a plugin.</li>
+</ul>
+
+<div class="callout warning">
+<div class="callout-label">The one trap to remember</div>
+<p>Plugin-provided components are always <strong>lowest precedence</strong> in their layer. If you install a plugin that provides a <code>code-reviewer</code> sub-agent and your project also has <code>.claude/agents/code-reviewer.md</code>, the project one wins silently. To debug "why isn't this plugin's agent firing?", check for name collisions at higher-precedence scopes.</p>
+</div>
+
+<h3 id="mcp-global-vs-scoped">MCP Global vs Agent-Scoped — Context Cost vs Lifecycle</h3>
+<div class="table-wrapper">
+<table>
+<thead><tr><th></th><th>Global <code>.mcp.json</code></th><th>Agent-scoped <code>mcpServers:</code></th></tr></thead>
+<tbody>
+<tr><td><strong>Lifecycle</strong></td><td>Connected at session start, alive until session ends</td><td>Connected when sub-agent spawns, dies when sub-agent finishes</td></tr>
+<tr><td><strong>Context cost</strong></td><td>All tool descriptions in context every turn (main session)</td><td>Zero cost in main session; only in sub-agent</td></tr>
+<tr><td><strong>Tool visibility</strong></td><td>Claude can call its tools anywhere</td><td>Only the specified sub-agent can call them</td></tr>
+<tr><td><strong>Setup cost</strong></td><td>One-time at session start</td><td>Paid every sub-agent invocation</td></tr>
+<tr><td><strong>Best for</strong></td><td>Lightweight, frequently-used servers (3–6 total)</td><td>Noisy/large servers used in one workflow</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout note">
+<div class="callout-label">Sizing rule</div>
+<p>If a server exposes &gt; 10 tools or you use it in &lt; 20% of your sessions, scope it to a sub-agent. Playwright (30+ tools, used only when testing UI), full GitHub MCP (huge surface area), Slack (large dir access) → agent-scoped. Filesystem, git, your design system docs → global.</p>
+</div>
+
+
 <!-- ============================================================
      SECTION 4
      ============================================================ -->
@@ -1883,6 +2542,37 @@ to all IaC work. Update memory with project-specific decisions as you discover t
 <li>Always use <code>--allowedTools</code> with explicit pattern matching: <code>Bash(git diff *)</code> not <code>Bash</code></li>
 </ul>
 
+<h3>MCP</h3>
+<ul>
+<li>Use <code>stdio</code> transport for local tools, <code>http</code> for hosted services. Avoid <code>sse</code> for new servers; prefer <code>http</code> (Streamable HTTP).</li>
+<li>Never commit credentials — use <code>${VAR}</code> interpolation in <code>.mcp.json</code> and set values per-environment.</li>
+<li>Scope noisy servers (Playwright, Slack, full GitHub) to sub-agents — keep the main session's context lean.</li>
+<li>Cap global <code>.mcp.json</code> to 3–6 servers; everything else goes agent-scoped.</li>
+<li>For CI: use API-key auth, not OAuth; validate env vars exist before running; treat hosted MCP as an upstream dependency that can drift.</li>
+<li>Run <code>claude mcp test &lt;name&gt;</code> as part of onboarding to verify each developer's MCP credentials work.</li>
+</ul>
+
+<h3>Plugins</h3>
+<ul>
+<li>Use plugins to ship cross-cutting team toolkits; keep one-off workflows as standalone skills.</li>
+<li>For org-wide mandates, use a private marketplace with <code>enabledPlugins</code> in managed settings — don't rely on each user installing manually.</li>
+<li>Plugin sub-agents cannot use <code>hooks</code>, <code>mcpServers</code>, or <code>permissionMode</code> — design around this. If a workflow needs those, the sub-agent has to live at <code>.claude/agents/</code>, not inside a plugin.</li>
+<li>Pin plugin versions in CI to avoid mid-pipeline updates. Better: use <code>--bare</code> and explicit install steps.</li>
+<li>Name plugin-provided components with the team prefix (<code>company:pr-review</code>) — this becomes the namespace.</li>
+<li>Use <code>claude plugin tag</code> (v2.1.121+) for release tagging with version validation.</li>
+</ul>
+
+<h3>Evals</h3>
+<ul>
+<li>Write an eval the first time a regression bites you — that's the canonical answer to "what is this skill supposed to do?"</li>
+<li>Use <code>tool_called</code> / <code>no_tool_called</code> for permission-style assertions (e.g., a read-only reviewer never invokes <code>Write</code>).</li>
+<li>Use <code>judge</code> sparingly — it costs an extra LLM call per case. Use <code>contains</code>/<code>regex</code> when the structural check is enough.</li>
+<li>Run evals on every PR that touches <code>.claude/agents/</code>, <code>.claude/skills/</code>, or <code>.claude/plugins/</code>.</li>
+<li>Track <strong>pass rate over time</strong>, not single-run pass/fail. A case dropping from 95% to 60% is a real regression; an 80% case landing at 70% is noise.</li>
+<li>For shared plugins: gate releases on the eval suite — no merge if regression bail-out triggers.</li>
+</ul>
+
+
 <!-- ============================================================
      SECTION 5
      ============================================================ -->
@@ -1916,6 +2606,11 @@ to all IaC work. Update memory with project-specific decisions as you discover t
 <tr><td>Memory &amp; CLAUDE.md</td><td><a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">code.claude.com/docs/en/memory</a></td></tr>
 <tr><td>Skills</td><td><a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">code.claude.com/docs/en/skills</a></td></tr>
 <tr><td>Sub-agents</td><td><a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener">code.claude.com/docs/en/sub-agents</a></td></tr>
+<tr><td>MCP</td><td><a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener">code.claude.com/docs/en/mcp</a></td></tr>
+<tr><td>Plugins</td><td><a href="https://code.claude.com/docs/en/plugins" target="_blank" rel="noopener">code.claude.com/docs/en/plugins</a></td></tr>
+<tr><td>Plugin components</td><td><a href="https://code.claude.com/docs/en/plugin-components" target="_blank" rel="noopener">code.claude.com/docs/en/plugin-components</a></td></tr>
+<tr><td>Evals</td><td><a href="https://code.claude.com/docs/en/evals" target="_blank" rel="noopener">code.claude.com/docs/en/evals</a></td></tr>
+<tr><td>Managed settings</td><td><a href="https://code.claude.com/docs/en/managed-settings" target="_blank" rel="noopener">code.claude.com/docs/en/managed-settings</a></td></tr>
 <tr><td>Headless / programmatic</td><td><a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener">code.claude.com/docs/en/headless</a></td></tr>
 <tr><td>Permission modes</td><td><a href="https://code.claude.com/docs/en/permission-modes" target="_blank" rel="noopener">code.claude.com/docs/en/permission-modes</a></td></tr>
 <tr><td>Hooks guide</td><td><a href="https://code.claude.com/docs/en/hooks-guide" target="_blank" rel="noopener">code.claude.com/docs/en/hooks-guide</a></td></tr>
@@ -2135,9 +2830,9 @@ to all IaC work. Update memory with project-specific decisions as you discover t
   }, observerOptions);
 
   // Observe section / cluster headings
-  ['section-1','section-2','section-3','section-4','section-5','references',
-   'cluster-1','cluster-2','cluster-3','cluster-4',
-   'two-directions','commands-matrix'].forEach(id => {
+  ['section-1','section-2','section-2b','section-3','section-4','section-5','references',
+   'cluster-1','cluster-2','cluster-3','cluster-4','cluster-5','cluster-6','cluster-7',
+   'two-directions','commands-matrix','plugin-mcp-skill','scope-model'].forEach(id => {
     const el = document.getElementById(id);
     if (el) observer.observe(el);
   });
