@@ -1690,7 +1690,9 @@ to all IaC work. Update memory with project-specific decisions as you discover t
 <tr><td>What goes into context</td><td>Skill content <strong>is</strong> the task prompt</td><td>Skills are <strong>standing knowledge</strong> injected before any task</td></tr>
 <tr><td>Who controls the system prompt</td><td>The agent type (<code>Explore</code>, <code>Plan</code>, custom)</td><td>Your sub-agent's markdown body</td></tr>
 <tr><td>Skill content lifecycle</td><td>IS the first message</td><td>Injected at startup, persists throughout</td></tr>
-<tr><td>Compatible with <code>disable-model-invocation: true</code>?</td><td>✅ Yes — orthogonal flags. The flag suppresses auto-invocation; <code>context: fork</code> controls where it runs.</td><td>✅ Yes — orthogonal flags. <code>skills:</code> is a startup-injection mechanism, independent of auto-invocation.</td></tr>
+<tr><td>Compatible with <code>disable-model-invocation: true</code>?</td><td>✅ Yes — independent flags. <code>disable-model-invocation</code> controls who can trigger the skill;  <code>context: fork</code>  controls where it runs. They combine without conflict.</td><td>✅ Yes — independent flags. <code>disable-model-invocation</code> controls auto-invocation in normal sessions; <code>skills:</code> controls startup injection into a sub-agent. They operate on different axes.
+
+</td></tr>
 <tr><td>What the field does NOT do</td><td>—</td><td><code>skills:</code> controls injection, <strong>not access</strong>. File-system-capable sub-agents can still discover other project skills via <code>Glob</code> on <code>.claude/skills/</code>. To block, use <code>disallowedTools: Skill(name)</code>.</td></tr>
 <tr><td>Reusability unit</td><td>The <strong>skill</strong></td><td>The <strong>sub-agent</strong></td></tr>
 </tbody>
